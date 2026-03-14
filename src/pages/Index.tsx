@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 
@@ -5,9 +6,12 @@ const VIDEO_URL = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIX
 
 const Index = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative h-screen flex flex-col overflow-hidden bg-background">
       {/* Background Video */}
-      <video
+      <motion.video
+        initial={{ scale: 1.1, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
         autoPlay
         loop
         muted
@@ -15,13 +19,13 @@ const Index = () => {
         className="absolute inset-0 w-full h-full object-cover z-0"
       >
         <source src={VIDEO_URL} type="video/mp4" />
-      </video>
+      </motion.video>
 
       {/* Overlay */}
       <div className="absolute inset-0 bg-background/50 z-[1]" />
 
       {/* Content */}
-      <div className="relative z-[2]">
+      <div className="relative z-[2] flex flex-col h-full">
         <Navbar />
         <HeroSection />
       </div>
