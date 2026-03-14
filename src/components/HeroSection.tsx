@@ -12,30 +12,20 @@ const HeroSection = () => {
         className="flex items-center gap-2 rounded-[20px] border border-foreground/20 bg-foreground/10 px-4 py-2"
       >
         <span className="block w-1 h-1 rounded-full bg-foreground" />
-        <span className="text-[13px] font-medium">
-          <span className="text-foreground/60">Early access available from</span>
-          <span className="text-foreground"> May 1, 2026</span>
+        <span className="text-[13px] font-medium text-foreground">
+          Early access for university exam prep
         </span>
       </motion.div>
 
-      {/* Heading — word-by-word blur reveal */}
-      <h1 className="mt-8 md:mt-10 max-w-[613px] text-[32px] sm:text-[42px] md:text-[56px] font-medium leading-[1.28]">
-        {"Web3 at the Speed of Experience".split(" ").map((word, i) => (
-          <motion.span
-            key={i}
-            initial={{ opacity: 0, filter: "blur(16px)", y: 20 }}
-            animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-            transition={{
-              duration: 0.7,
-              delay: 0.6 + i * 0.1,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="inline-block text-gradient-hero mr-[0.3em]"
-          >
-            {word}
-          </motion.span>
-        ))}
-      </h1>
+      {/* Heading — single gradient across entire text */}
+      <motion.h1
+        initial={{ opacity: 0, filter: "blur(16px)", y: 20 }}
+        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+        transition={{ duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-8 md:mt-10 max-w-[613px] text-[32px] sm:text-[42px] md:text-[56px] font-medium leading-[1.1] text-gradient-hero"
+      >
+        Predict What Matters in Your Exams
+      </motion.h1>
 
       {/* Subtitle */}
       <motion.p
@@ -44,7 +34,7 @@ const HeroSection = () => {
         transition={{ duration: 0.9, delay: 1.3, ease: [0.16, 1, 0.3, 1] }}
         className="mt-5 md:mt-6 text-[14px] md:text-[15px] font-normal text-foreground/70 max-w-[680px] leading-relaxed"
       >
-        Powering seamless experiences and real-time connections, EOS is the base for creators who move with purpose, leveraging resilience, speed, and scale to shape the future.
+        Upload your syllabus and previous year question papers and instantly discover high-probability exam questions, repetition patterns, and the topics most likely to appear in your exam.
       </motion.p>
 
       {/* CTA */}
@@ -54,7 +44,7 @@ const HeroSection = () => {
         transition={{ duration: 0.7, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
         className="mt-8 md:mt-10"
       >
-        <GlowButton variant="light">Join Waitlist</GlowButton>
+        <GlowButton variant="light">Generate Probables</GlowButton>
       </motion.div>
     </section>
   );
