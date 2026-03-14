@@ -70,6 +70,16 @@
     scrollbar-width: thin;
     scrollbar-color: hsla(0, 0%, 100%, 0.15) transparent;
   }
+
+  ::selection {
+    background: hsla(0, 0%, 100%, 0.18);
+    color: hsl(0, 0%, 100%);
+  }
+
+  ::-moz-selection {
+    background: hsla(0, 0%, 100%, 0.18);
+    color: hsl(0, 0%, 100%);
+  }
 }
 
 @layer utilities {
@@ -92,5 +102,83 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Analyze / Results page styles */
+  .analyze-bg {
+    background: #050810;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(59, 111, 212, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(59, 111, 212, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 30% at 50% 50%, rgba(59, 111, 212, 0.04) 0%, transparent 60%);
+    animation: analyze-bg-pulse 15s ease-in-out infinite;
+  }
+  @keyframes analyze-bg-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.9; }
+  }
+
+  .analyze-input {
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .analyze-input:focus {
+    box-shadow: 0 0 0 2px rgba(59, 111, 212, 0.4);
+  }
+
+  .analyze-shake {
+    animation: analyze-shake 0.3s ease-in-out;
+  }
+  @keyframes analyze-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .analyze-btn-shimmer {
+    background: linear-gradient(
+      90deg,
+      #fff 0%,
+      #fff 40%,
+      rgba(255, 255, 255, 0.9) 50%,
+      #fff 60%,
+      #fff 100%
+    );
+    background-size: 200% 100%;
+    animation: analyze-shimmer 3s linear infinite;
+  }
+  @keyframes analyze-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .analyze-loading-pulse {
+    animation: analyze-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes analyze-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .analyze-loading-glow {
+    background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(59, 111, 212, 0.08) 0%, transparent 70%);
+    animation: analyze-glow-pulse 2s ease-in-out infinite;
+  }
+  @keyframes analyze-glow-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .results-enter {
+    animation: results-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes results-enter {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

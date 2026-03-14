@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import GlowButton from "./GlowButton";
 
@@ -44,7 +45,9 @@ const HeroSection = () => {
         transition={{ duration: 1.0, delay: 1.8, ease: [0.16, 1, 0.3, 1] }}
         className="mt-8 md:mt-10"
       >
-        <GlowButton variant="light">Generate Probables</GlowButton>
+        <Link to="/analyze">
+          <GlowButton variant="light">Generate Probables</GlowButton>
+        </Link>
       </motion.div>
     </section>
   );

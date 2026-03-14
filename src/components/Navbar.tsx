@@ -1,8 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GlowButton from "./GlowButton";
 
-const navLinks = ["Docs", "Process", "Analyze", "Features"];
+const navLinks: { name: string; href: string }[] = [
+  { name: "Docs", href: "#" },
+  { name: "Process", href: "#" },
+  { name: "Analyze", href: "/analyze" },
+  { name: "Features", href: "#" },
+];
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -26,18 +32,21 @@ const Navbar = () => {
         {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center gap-[30px]">
           {navLinks.map((link, i) => (
-            <motion.a
-              key={link}
-              href="#"
+            <motion.div
+              key={link.name}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="group relative text-[14px] font-medium text-foreground/70 hover:text-foreground transition-colors duration-300 py-1"
             >
-              {link}
+              <Link
+                to={link.href}
+                className="group relative block text-[14px] font-medium text-foreground/70 hover:text-foreground transition-colors duration-300 py-1"
+              >
+                {link.name}
               <span className="absolute bottom-0 left-0 w-full h-px bg-foreground origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[80%] h-[4px] bg-foreground/0 group-hover:bg-foreground/20 blur-[4px] transition-all duration-300" />
-            </motion.a>
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[80%] h-[4px] bg-foreground/0 group-hover:bg-foreground/20 blur-[4px] transition-all duration-300" />
+              </Link>
+            </motion.div>
           ))}
         </div>
 
@@ -48,7 +57,9 @@ const Navbar = () => {
             transition={{ duration: 0.5, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="hidden md:block"
           >
-            <GlowButton variant="dark">Generate Probables</GlowButton>
+            <Link to="/analyze">
+              <GlowButton variant="dark">Generate Probables</GlowButton>
+            </Link>
           </motion.div>
 
           {/* Mobile — morphing hamburger */}
@@ -130,9 +141,8 @@ const Navbar = () => {
               {/* Nav links — large typography, staggered spring */}
               <nav className="flex-1 flex flex-col justify-center -mt-24 pointer-events-auto">
                 {navLinks.map((link, i) => (
-                  <motion.a
-                    key={link}
-                    href="#"
+                  <motion.div
+                    key={link.name}
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12, transition: { duration: 0.2 } }}
@@ -141,19 +151,23 @@ const Navbar = () => {
                       delay: 0.25 + i * 0.08,
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    onClick={() => setMobileOpen(false)}
-                    className="group py-5 border-b border-foreground/5 last:border-0"
                   >
+                    <Link
+                      to={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="group block py-5 border-b border-foreground/5 last:border-0"
+                    >
                     <span className="text-[28px] sm:text-[32px] font-medium tracking-[-0.02em] text-foreground/90 group-hover:text-foreground transition-colors duration-300 inline-block group-active:scale-[0.98]">
-                      {link}
+                      {link.name}
                     </span>
                     <span className="block mt-1 text-[12px] font-medium text-foreground/30 group-hover:text-foreground/50 transition-colors duration-300">
-                      {link === "Docs" && "Documentation & guides"}
-                      {link === "Process" && "How it works"}
-                      {link === "Analyze" && "Pattern detection"}
-                      {link === "Features" && "What we offer"}
+                      {link.name === "Docs" && "Documentation & guides"}
+                      {link.name === "Process" && "How it works"}
+                      {link.name === "Analyze" && "Pattern detection"}
+                      {link.name === "Features" && "What we offer"}
                     </span>
-                  </motion.a>
+                    </Link>
+                  </motion.div>
                 ))}
               </nav>
 
@@ -164,9 +178,11 @@ const Navbar = () => {
                 transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 className="pt-8 pointer-events-auto"
               >
-                <GlowButton variant="light" className="w-full py-4 text-base">
-                  Generate Probables
-                </GlowButton>
+                <Link to="/analyze" className="block" onClick={() => setMobileOpen(false)}>
+                  <GlowButton variant="light" className="w-full py-4 text-base">
+                    Generate Probables
+                  </GlowButton>
+                </Link>
               </motion.div>
             </motion.div>
           </motion.div>
