@@ -134,8 +134,8 @@ const Analyze = () => {
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 8192,
+              temperature: 0,
+              maxOutputTokens: 14000,
             },
           }),
         }
