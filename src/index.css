@@ -75,6 +75,18 @@
 }
 
 @layer utilities {
+  .hero-video {
+    animation: hero-video-fade 2s ease-out 0.3s both;
+  }
+  @keyframes hero-video-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   .text-gradient-hero {
     background: linear-gradient(
       135deg,
