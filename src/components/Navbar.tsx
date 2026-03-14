@@ -133,8 +133,8 @@ const Navbar = () => {
                   <motion.a
                     key={link}
                     href="#"
-                    initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12, transition: { duration: 0.2 } }}
                     transition={{
                       duration: 0.6,

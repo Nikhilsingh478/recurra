@@ -1,5 +1,3 @@
-@import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -76,15 +74,11 @@
 
 @layer utilities {
   .hero-video {
-    animation: hero-video-fade 2s ease-out 0.3s both;
+    opacity: 0;
+    transition: opacity 1.2s ease-out;
   }
-  @keyframes hero-video-fade {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+  .hero-video-visible {
+    opacity: 1;
   }
 
   .text-gradient-hero {
