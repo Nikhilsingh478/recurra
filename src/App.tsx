@@ -9,6 +9,7 @@ import Analyze from "./pages/Analyze.tsx";
 import Results from "./pages/Results.tsx";
 import Docs from "./pages/Docs.tsx";
 import Features from "./pages/Features.tsx";
+import ProcessPage from "./pages/Process.tsx";
 
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
