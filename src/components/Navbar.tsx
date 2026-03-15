@@ -5,7 +5,7 @@ import GlowButton from "./GlowButton";
 
 const navLinks: { name: string; href: string }[] = [
   { name: "Docs", href: "/docs" },
-  { name: "Process", href: "#" },
+  { name: "Process", href: "/process" },
   { name: "Analyze", href: "/analyze" },
   { name: "Features", href: "/features" },
 ];
