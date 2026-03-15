@@ -367,7 +367,7 @@ const Process = () => {
               { label: "14,000 token output limit", sub: "Enough for any subject" },
               { label: "Strict JSON response", sub: "Structured, parseable, reliable" },
             ].map((r, i) => (
-              <div key={i} data-reveal style={rv(0.3 + i * 0.07)} className="flex items-center gap-3.5 py-3.5" style2={undefined}>
+              <div key={i} data-reveal style={rv(0.3 + i * 0.07)} className="flex items-center gap-3.5 py-3.5">
                 <div style={{ width: 2, height: 28, background: "#3b6fd4", borderRadius: 1, flexShrink: 0 }} />
                 <div>
                   <p style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>{r.label}</p>
