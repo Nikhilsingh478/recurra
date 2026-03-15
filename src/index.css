@@ -266,4 +266,77 @@
     transform: translate3d(0, -2px, 0);
     box-shadow: 0 8px 30px rgba(255,255,255,0.1);
   }
+
+  /* Process page */
+  .proc-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 28px 32px;
+  }
+
+  @keyframes blurSlideRight {
+    from { opacity: 0; filter: blur(10px); transform: translate3d(40px, 0, 0); }
+    to   { opacity: 1; filter: blur(0);    transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes slowRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  @keyframes scrollDot {
+    0%   { transform: translate3d(0, 0, 0);    opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translate3d(0, 40px, 0); opacity: 0; }
+  }
+
+  @keyframes nodePulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(59,111,212,0.3); }
+    50%      { box-shadow: 0 0 20px rgba(59,111,212,0.6), 0 0 40px rgba(59,111,212,0.2); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes travelDown {
+    0%   { transform: translate3d(0, 0, 0);    opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translate3d(0, 46px, 0); opacity: 0; }
+  }
+
+  @keyframes boxGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59,111,212,0); }
+    50%      { box-shadow: 0 0 0 8px rgba(59,111,212,0.08), 0 0 30px rgba(59,111,212,0.12); }
+  }
+
+  .proc-shimmer-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 36px;
+    border-radius: 999px;
+    font-family: "Syne", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #050810;
+    text-decoration: none;
+    height: 52px;
+    background: linear-gradient(108deg, #fff 35%, #dce8ff 50%, #fff 65%);
+    background-size: 200% auto;
+    animation: procShimmer 3s linear infinite;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .proc-shimmer-btn:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 8px 30px rgba(255,255,255,0.12);
+  }
+  @keyframes procShimmer {
+    0%   { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
 }
