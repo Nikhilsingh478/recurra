@@ -22,12 +22,13 @@ const Navbar = () => {
         className="relative z-20 flex items-center justify-between px-6 md:px-[120px] py-[20px]"
       >
         {/* Logo */}
-        <span
-          className="text-foreground font-semibold text-lg tracking-tight select-none"
-          style={{ width: 187, height: 25, display: "flex", alignItems: "center" }}
+        <Link
+          to="/"
+          className="text-foreground font-semibold text-lg tracking-tight select-none hover:opacity-80 transition-opacity duration-200"
+          style={{ width: 187, height: 25, display: "flex", alignItems: "center", textDecoration: "none" }}
         >
           RECURRA
-        </span>
+        </Link>
 
         {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center gap-[30px]">
@@ -43,7 +44,7 @@ const Navbar = () => {
                 className="group relative block text-[14px] font-medium text-foreground/70 hover:text-foreground transition-colors duration-300 py-1"
               >
                 {link.name}
-              <span className="absolute bottom-0 left-0 w-full h-px bg-foreground origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                <span className="absolute bottom-0 left-0 w-full h-px bg-foreground origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[80%] h-[4px] bg-foreground/0 group-hover:bg-foreground/20 blur-[4px] transition-all duration-300" />
               </Link>
             </motion.div>
@@ -157,15 +158,15 @@ const Navbar = () => {
                       onClick={() => setMobileOpen(false)}
                       className="group block py-5 border-b border-foreground/5 last:border-0"
                     >
-                    <span className="text-[28px] sm:text-[32px] font-medium tracking-[-0.02em] text-foreground/90 group-hover:text-foreground transition-colors duration-300 inline-block group-active:scale-[0.98]">
-                      {link.name}
-                    </span>
-                    <span className="block mt-1 text-[12px] font-medium text-foreground/30 group-hover:text-foreground/50 transition-colors duration-300">
-                      {link.name === "Docs" && "Documentation & guides"}
-                      {link.name === "Process" && "How it works"}
-                      {link.name === "Analyze" && "Pattern detection"}
-                      {link.name === "Features" && "What we offer"}
-                    </span>
+                      <span className="text-[28px] sm:text-[32px] font-medium tracking-[-0.02em] text-foreground/90 group-hover:text-foreground transition-colors duration-300 inline-block group-active:scale-[0.98]">
+                        {link.name}
+                      </span>
+                      <span className="block mt-1 text-[12px] font-medium text-foreground/30 group-hover:text-foreground/50 transition-colors duration-300">
+                        {link.name === "Docs" && "Documentation & guides"}
+                        {link.name === "Process" && "How it works"}
+                        {link.name === "Analyze" && "Pattern detection"}
+                        {link.name === "Features" && "What we offer"}
+                      </span>
                     </Link>
                   </motion.div>
                 ))}
