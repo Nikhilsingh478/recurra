@@ -402,7 +402,7 @@ const Analyze = () => {
         <div className="az-bg fixed inset-0 -z-10" aria-hidden />
         <Navbar />
 
-        <div className="mx-auto max-w-[680px] px-4 pb-24 pt-12 sm:px-6 md:pt-20">
+        <div className="mx-auto max-w-[820px] px-5 pb-24 pt-12 sm:px-8 md:pt-20">
 
           {/* ── Badge ── */}
           {mounted && (
@@ -422,7 +422,7 @@ const Analyze = () => {
             <div className="reveal d2 mb-5">
               <h1
                 className="page-heading font-heading font-bold leading-[1.07] tracking-tight text-white"
-                style={{ fontSize: "clamp(1.9rem, 5vw, 2.9rem)" }}
+                style={{ fontSize: "clamp(1.9rem, 5vw, 3.2rem)" }}
               >
                 Drop Your Material.
                 <br />
