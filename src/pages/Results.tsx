@@ -1,19 +1,30 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 
+/* ─────────────────────────────────────────────
+   TYPES
+───────────────────────────────────────────── */
 interface ProbableQuestion {
   question: string;
   frequency: number;
-  isHighFrequency: boolean;
+  priority?: "HIGHEST" | "HIGH" | "LOW";
+  isHighFrequency?: boolean;
 }
 
 interface Unit {
   unitNumber: number;
   unitTitle: string;
-  priority: "HIGH" | "MEDIUM" | "LOW";
+  unitPriority?: "HIGHEST" | "HIGH" | "LOW";
+  priority?: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW";
   probableQuestions: ProbableQuestion[];
   topTopics: string[];
+}
+
+interface HFQuestion {
+  question: string;
+  frequency: number;
+  unit: string;
 }
 
 interface RecurraResults {
@@ -21,11 +32,28 @@ interface RecurraResults {
   totalYearsAnalyzed: number;
   units: Unit[];
   examStrategy: string;
-  superHighFrequencyTopics: string[];
+  highFrequencyTopics?: string[];
+  highFrequencyQuestions?: HFQuestion[];
+  superHighFrequencyTopics?: string[];
   timestamp?: string;
 }
 
-/* ── Blur-reveal hook — fires when element enters viewport ── */
+/* ─────────────────────────────────────────────
+   PRIORITY MAP
+───────────────────────────────────────────── */
+const P = {
+  HIGHEST: { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)",  color: "rgb(251,191,36)",       dot: "#f59e0b", label: "HIGHEST" },
+  HIGH:    { bg: "rgba(59,111,212,0.09)", border: "rgba(59,111,212,0.25)", color: "rgb(147,180,248)",      dot: "#3b6fd4", label: "HIGH"    },
+  MEDIUM:  { bg: "rgba(59,111,212,0.09)", border: "rgba(59,111,212,0.25)", color: "rgb(147,180,248)",      dot: "#3b6fd4", label: "MEDIUM"  },
+  LOW:     { bg: "rgba(255,255,255,0.03)",border: "rgba(255,255,255,0.07)",color: "rgba(255,255,255,0.3)", dot: "rgba(255,255,255,0.18)", label: "LOW" },
+};
+type PKey = keyof typeof P;
+
+const getP = (key?: string) => P[(key as PKey) ?? "LOW"] ?? P.LOW;
+
+/* ─────────────────────────────────────────────
+   BLUR-REVEAL HOOK
+───────────────────────────────────────────── */
 const useReveal = (delay = 0) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -33,8 +61,8 @@ const useReveal = (delay = 0) => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setTimeout(() => setVisible(true), delay); obs.disconnect(); } },
-      { threshold: 0.08 }
+      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), delay); obs.disconnect(); } },
+      { threshold: 0.05 }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -42,106 +70,117 @@ const useReveal = (delay = 0) => {
   return { ref, visible };
 };
 
-/* ── Question row with staggered blur-reveal ── */
-const QuestionRow = ({
-  q, index,
-}: {
-  q: ProbableQuestion;
-  index: number;
-}) => {
-  const { ref, visible } = useReveal(index * 55);
+const revealStyle = (visible: boolean): React.CSSProperties => ({
+  opacity: visible ? 1 : 0,
+  filter: visible ? "blur(0)" : "blur(8px)",
+  transform: visible ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
+  transition: "opacity 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1)",
+  willChange: "opacity,filter,transform",
+});
+
+/* ─────────────────────────────────────────────
+   QUESTION ROW — extracted component (fixes hooks-in-map bug)
+───────────────────────────────────────────── */
+const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
+  const { ref, visible } = useReveal(index * 50);
+  const pKey = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+  const p = getP(pKey);
+
   return (
     <div
       ref={ref}
-      className="q-row group flex items-start justify-between gap-4 border-b border-white/[0.04] py-[14px]"
-      style={{
-        opacity: visible ? 1 : 0,
-        filter: visible ? "blur(0px)" : "blur(10px)",
-        transform: visible ? "translateY(0)" : "translateY(8px)",
-        transition: "opacity 0.55s cubic-bezier(0.16,1,0.3,1), filter 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)",
-      }}
+      className="q-row flex items-start justify-between gap-4 border-b border-white/[0.05] py-4"
+      style={revealStyle(visible)}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        {q.isHighFrequency ? (
-          <span className="mt-[1px] shrink-0 text-sm">🔥</span>
+        {pKey === "HIGHEST" ? (
+          <span className="mt-0.5 shrink-0 text-sm leading-none">🔥</span>
+        ) : pKey === "HIGH" ? (
+          <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.dot }} />
         ) : (
-          <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-white/20" />
+          <span className="mt-[8px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }} />
         )}
         <span
-          className="text-[0.875rem] leading-relaxed"
-          style={{ color: q.isHighFrequency ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.55)" }}
+          className="text-[0.9rem] leading-relaxed"
+          style={{
+            color: pKey === "HIGHEST" ? "rgba(255,255,255,0.9)"
+                 : pKey === "HIGH"    ? "rgba(255,255,255,0.68)"
+                 :                      "rgba(255,255,255,0.4)",
+          }}
         >
           {q.question}
         </span>
       </div>
       <span
-        className="freq-badge shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium"
-        style={{
-          background: q.isHighFrequency ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.04)",
-          color: q.isHighFrequency ? "rgb(251,191,36)" : "rgba(255,255,255,0.28)",
-          border: q.isHighFrequency ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(255,255,255,0.06)",
-        }}
+        className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+        style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
       >
-        {q.frequency}x
+        {q.frequency}×
       </span>
     </div>
   );
 };
 
-/* ── Unit section ── */
-const UnitSection = ({ unit, sectionIndex }: { unit: Unit; sectionIndex: number }) => {
-  const { ref, visible } = useReveal(sectionIndex * 80);
+/* ─────────────────────────────────────────────
+   HF QUESTION CARD — extracted component
+───────────────────────────────────────────── */
+const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
+  const { ref, visible } = useReveal(index * 55);
+  return (
+    <div ref={ref} className="hfq-card" style={revealStyle(visible)}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="mt-0.5 shrink-0 text-sm">🔥</span>
+          <p className="text-[0.9rem] leading-relaxed text-white/88">{q.question}</p>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+          style={{ background: "rgba(245,158,11,0.09)", border: "1px solid rgba(245,158,11,0.22)", color: "rgb(251,191,36)" }}
+        >
+          {q.frequency}×
+        </span>
+      </div>
+      <p className="mt-2 text-[11px] text-white/28">{q.unit}</p>
+    </div>
+  );
+};
 
-  const priorityStyle = {
-    HIGH:   { bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.25)",  color: "rgb(251,191,36)",        label: "HIGH" },
-    MEDIUM: { bg: "rgba(59,111,212,0.1)",   border: "rgba(59,111,212,0.3)",   color: "rgb(147,180,248)",       label: "MEDIUM" },
-    LOW:    { bg: "rgba(255,255,255,0.03)", border: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", label: "LOW" },
-  }[unit.priority];
+/* ─────────────────────────────────────────────
+   UNIT SECTION — extracted component
+───────────────────────────────────────────── */
+const UnitSection = ({ unit, idx }: { unit: Unit; idx: number }) => {
+  const { ref, visible } = useReveal(idx * 80);
+  const up = getP(unit.unitPriority ?? unit.priority);
 
   return (
-    <div
-      ref={ref}
-      className="unit-section mb-14"
-      style={{
-        opacity: visible ? 1 : 0,
-        filter: visible ? "blur(0px)" : "blur(12px)",
-        transform: visible ? "translateY(0)" : "translateY(16px)",
-        transition: "opacity 0.7s cubic-bezier(0.16,1,0.3,1), filter 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)",
-      }}
-    >
+    <div ref={ref} className="mb-16" style={revealStyle(visible)}>
       {/* Unit header */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/22">
             Unit {unit.unitNumber}
           </p>
-          <h2 className="font-heading text-[1.15rem] font-semibold leading-tight text-white/90">
+          <h2 className="font-heading text-xl font-semibold leading-snug text-white/90 md:text-2xl">
             {unit.unitTitle}
           </h2>
         </div>
         <span
-          className="mt-1 shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold"
-          style={{ background: priorityStyle.bg, border: `1px solid ${priorityStyle.border}`, color: priorityStyle.color }}
+          className="mt-1 shrink-0 rounded-full px-3.5 py-1 text-[11px] font-bold tracking-wide"
+          style={{ background: up.bg, border: `1px solid ${up.border}`, color: up.color }}
         >
-          {priorityStyle.label}
+          {up.label}
         </span>
       </div>
 
       {/* Divider */}
-      <div className="mb-5 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.07) 0%, transparent 100%)" }} />
+      <div className="mb-5 h-px" style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 75%)" }} />
 
       {/* Topics */}
       {unit.topTopics?.length > 0 && (
         <div className="mb-5 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-white/25">Topics —</span>
+          <span className="text-[11px] text-white/20">Topics —</span>
           {unit.topTopics.map((t, i) => (
-            <span
-              key={i}
-              className="topic-pill rounded-full px-2.5 py-0.5 text-[11px] text-white/40"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              {t}
-            </span>
+            <span key={i} className="topic-pill rounded-full px-3 py-0.5 text-[11px] text-white/38">{t}</span>
           ))}
         </div>
       )}
@@ -156,293 +195,467 @@ const UnitSection = ({ unit, sectionIndex }: { unit: Unit; sectionIndex: number 
   );
 };
 
-/* ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   EXPORT TO TXT
+───────────────────────────────────────────── */
+const doExport = (data: RecurraResults) => {
+  const L: string[] = [];
+  L.push(`RECURRA — ${data.subject} Exam Probables`);
+  L.push(`Generated: ${new Date(data.timestamp ?? "").toLocaleString("en-IN")} · ${data.totalYearsAnalyzed} years analyzed`);
+  L.push(""); L.push("━━━ EXAM STRATEGY ━━━"); L.push(data.examStrategy ?? ""); L.push("");
+  const hfT = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
+  if (hfT.length) { L.push("━━━ HIGH FREQUENCY TOPICS ━━━"); hfT.forEach(t => L.push(`  • ${t}`)); L.push(""); }
+  L.push("━━━ UNIT-WISE PROBABLE QUESTIONS ━━━");
+  data.units?.forEach(u => {
+    L.push(""); L.push(`UNIT ${u.unitNumber}: ${u.unitTitle}  [${u.unitPriority ?? u.priority ?? "LOW"}]`);
+    u.probableQuestions?.forEach(q => {
+      const pk = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+      L.push(`  ${pk === "HIGHEST" ? "🔥" : pk === "HIGH" ? "▸" : "·"} ${q.question}  (${q.frequency}×)`);
+    });
+  });
+  const hfQ = data.highFrequencyQuestions ?? [];
+  if (hfQ.length) { L.push(""); L.push("━━━ MUST PREPARE ━━━"); hfQ.forEach(q => L.push(`  🔥 ${q.question}  (${q.frequency}×) — ${q.unit}`)); }
+  const blob = new Blob([L.join("\n")], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${(data.subject ?? "recurra").replace(/\s+/g, "_")}_probables.txt`; a.click();
+  URL.revokeObjectURL(url);
+};
 
+/* ─────────────────────────────────────────────
+   MAIN RESULTS COMPONENT
+───────────────────────────────────────────── */
 const Results = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState<RecurraResults | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [data, setData]           = useState<RecurraResults | null>(null);
+  const [mounted, setMounted]     = useState(false);
+  const [copied, setCopied]       = useState(false);
+  const [activeTab, setActiveTab] = useState<"units" | "strategy" | "topics" | "hf">("units");
 
   useEffect(() => {
     const raw = localStorage.getItem("recurra_results");
     if (!raw) { navigate("/analyze"); return; }
-    try {
-      setData(JSON.parse(raw));
-      setTimeout(() => setMounted(true), 80);
-    } catch {
-      navigate("/analyze");
-    }
+    try { setData(JSON.parse(raw)); setTimeout(() => setMounted(true), 100); }
+    catch { navigate("/analyze"); }
   }, [navigate]);
 
-  const copyResults = () => {
+  const copyResults = useCallback(() => {
     if (!data) return;
-    const lines: string[] = [];
-    lines.push(`${data.subject} — Exam Probables`);
-    lines.push(`${data.totalYearsAnalyzed} years analyzed`);
-    lines.push(""); lines.push("Exam Strategy:"); lines.push(data.examStrategy);
-    lines.push(""); lines.push("Super High-Frequency:"); lines.push(data.superHighFrequencyTopics.join(", "));
-    lines.push("");
-    data.units.forEach((u) => {
-      lines.push(`UNIT ${u.unitNumber}: ${u.unitTitle} [${u.priority}]`);
-      lines.push("Topics: " + u.topTopics.join(", ")); lines.push("");
-      u.probableQuestions.forEach((q) => {
-        lines.push(`${q.isHighFrequency ? "🔥" : "·"} ${q.question}  (${q.frequency}x)`);
+    const L: string[] = [];
+    L.push(`${data.subject} — Exam Probables (${data.totalYearsAnalyzed} years analyzed)`);
+    L.push(""); L.push("Exam Strategy:"); L.push(data.examStrategy ?? ""); L.push("");
+    const hfT = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
+    if (hfT.length) { L.push("High Frequency Topics:"); L.push(hfT.join(", ")); L.push(""); }
+    data.units?.forEach(u => {
+      L.push(`UNIT ${u.unitNumber}: ${u.unitTitle}`);
+      u.probableQuestions?.forEach(q => {
+        const pk = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+        L.push(`${pk === "HIGHEST" ? "🔥" : "·"} ${q.question}  (${q.frequency}×)`);
       });
-      lines.push("");
+      L.push("");
     });
-    navigator.clipboard.writeText(lines.join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
-  };
+    navigator.clipboard.writeText(L.join("\n"));
+    setCopied(true); setTimeout(() => setCopied(false), 2400);
+  }, [data]);
 
-  const fmt = (ts?: string) => {
-    if (!ts) return "";
-    return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  };
+  const fmt = (ts?: string) => ts
+    ? new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "";
 
   if (!data) return null;
+
+  const hfTopics    = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
+  const hfQuestions = data.highFrequencyQuestions ?? [];
+  const totalQ      = data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0;
+
+  /* fallback hf questions from units */
+  const mustPrepare: HFQuestion[] = hfQuestions.length > 0
+    ? hfQuestions
+    : (data.units?.flatMap(u =>
+        (u.probableQuestions ?? [])
+          .filter(q => q.frequency >= 2)
+          .map(q => ({ question: q.question, frequency: q.frequency, unit: u.unitTitle }))
+      ) ?? []).sort((a, b) => b.frequency - a.frequency);
+
+  const TABS = [
+    { key: "units"    as const, label: "Unit-wise" },
+    { key: "strategy" as const, label: "Strategy" },
+    { key: "topics"   as const, label: "Topics" },
+    { key: "hf"       as const, label: "Must Prepare", count: mustPrepare.length },
+  ];
 
   return (
     <>
       <style>{`
-        /* ── Page background ── */
         .res-bg {
           background:
-            radial-gradient(ellipse 60% 40% at 10% 5%,  rgba(25,50,120,0.14) 0%, transparent 65%),
-            radial-gradient(ellipse 45% 35% at 90% 90%, rgba(15,32,90,0.12) 0%, transparent 65%),
+            radial-gradient(ellipse 65% 45% at 5% 2%,  rgba(22,45,112,0.15) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 40% at 95% 98%, rgba(12,28,82,0.11) 0%, transparent 60%),
             #050810;
         }
 
-        /* ── Blur-in for static sections ── */
+        /* Static blur-in */
         @keyframes blurIn {
-          from { opacity:0; filter:blur(14px); transform:translateY(12px); }
-          to   { opacity:1; filter:blur(0);    transform:translateY(0); }
+          from { opacity:0; filter:blur(10px); transform:translate3d(0,14px,0); }
+          to   { opacity:1; filter:blur(0);    transform:translate3d(0,0,0); }
         }
-        .b-reveal { opacity:0; animation: blurIn 0.75s cubic-bezier(0.16,1,0.3,1) forwards; }
-        .bd1 { animation-delay:0.06s; }
-        .bd2 { animation-delay:0.15s; }
-        .bd3 { animation-delay:0.24s; }
-        .bd4 { animation-delay:0.33s; }
+        .b-rev { opacity:0; will-change:opacity,filter,transform; animation:blurIn 0.72s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .bd1 { animation-delay:0.08s; }
+        .bd2 { animation-delay:0.17s; }
+        .bd3 { animation-delay:0.26s; }
 
-        /* ── Question row hover ── */
+        /* Tab bar */
+        .tab-bar {
+          display:flex; gap:2px;
+          background:rgba(255,255,255,0.028);
+          border:1px solid rgba(255,255,255,0.065);
+          border-radius:12px; padding:4px;
+          overflow-x:auto; scrollbar-width:none;
+        }
+        .tab-bar::-webkit-scrollbar { display:none; }
+        .tab-btn {
+          flex-shrink:0; padding:8px 16px;
+          border-radius:9px; border:none;
+          font-size:0.82rem; font-weight:500;
+          color:rgba(255,255,255,0.38);
+          background:transparent; cursor:pointer;
+          transition:background 0.18s ease, color 0.18s ease;
+          white-space:nowrap;
+        }
+        .tab-btn:hover { color:rgba(255,255,255,0.6); }
+        .tab-btn.active { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.9); }
+
+        /* Question row */
         .q-row {
-          transition: background 0.18s ease, padding-left 0.18s ease;
-          border-radius: 8px;
-          padding-left: 6px;
-          padding-right: 6px;
-          margin-left: -6px;
-          margin-right: -6px;
+          border-radius:10px;
+          margin-left:-8px; margin-right:-8px;
+          padding-left:8px; padding-right:8px;
+          transition:background 0.15s ease;
         }
-        .q-row:hover { background: rgba(255,255,255,0.025); }
-        .q-row:hover .freq-badge { opacity: 1; }
+        .q-row:hover { background:rgba(255,255,255,0.02); }
 
-        /* ── Topic pill hover ── */
+        /* Topic pill */
         .topic-pill {
-          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-          cursor: default;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.07);
+          transition:background 0.18s, border-color 0.18s, color 0.18s;
+          cursor:default;
         }
         .topic-pill:hover {
-          background: rgba(59,111,212,0.1) !important;
-          border-color: rgba(59,111,212,0.25) !important;
-          color: rgba(147,180,248,0.9) !important;
+          background:rgba(59,111,212,0.09);
+          border-color:rgba(59,111,212,0.22);
+          color:rgba(147,180,248,0.85);
         }
 
-        /* ── Amber pill ── */
-        .amber-pill {
-          background: rgba(245,158,11,0.08);
-          border: 1px solid rgba(245,158,11,0.2);
-          color: rgb(252,196,70);
-          border-radius: 999px;
-          padding: 5px 14px;
-          font-size: 0.8rem;
-          font-weight: 500;
-          white-space: nowrap;
-          transition: background 0.2s ease, transform 0.2s ease;
+        /* Strategy card */
+        .strat-card {
+          background:rgba(255,255,255,0.02);
+          border:1px solid rgba(255,255,255,0.065);
+          border-left:2px solid rgba(59,111,212,0.7);
+          border-radius:16px; padding:24px 26px;
+          transition:background 0.2s, border-left-color 0.2s;
         }
-        .amber-pill:hover {
-          background: rgba(245,158,11,0.14);
-          transform: translateY(-1px);
-        }
+        .strat-card:hover { background:rgba(59,111,212,0.03); border-left-color:#6494e8; }
 
-        /* ── Strategy card ── */
-        .strategy-card {
-          background: rgba(255,255,255,0.025);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-left: 3px solid #3b6fd4;
-          border-radius: 14px;
-          padding: 22px 24px;
-          transition: border-color 0.25s ease, background 0.25s ease;
+        /* HF topic pill */
+        .hft-pill {
+          background:rgba(245,158,11,0.07);
+          border:1px solid rgba(245,158,11,0.18);
+          color:rgb(251,191,36); border-radius:999px;
+          padding:6px 16px; font-size:0.82rem; font-weight:500;
+          white-space:nowrap; cursor:default;
+          transition:background 0.18s, transform 0.18s;
+          will-change:transform;
         }
-        .strategy-card:hover {
-          background: rgba(59,111,212,0.04);
-          border-color: rgba(255,255,255,0.1);
-          border-left-color: #5a8ae8;
-        }
+        .hft-pill:hover { background:rgba(245,158,11,0.13); transform:translate3d(0,-1px,0); }
 
-        /* ── Stat pill ── */
+        /* HF question card */
+        .hfq-card {
+          background:rgba(245,158,11,0.035);
+          border:1px solid rgba(245,158,11,0.1);
+          border-radius:14px; padding:18px 20px;
+          transition:background 0.18s, border-color 0.18s, transform 0.18s;
+          will-change:transform;
+        }
+        .hfq-card:hover { background:rgba(245,158,11,0.065); border-color:rgba(245,158,11,0.18); transform:translate3d(0,-2px,0); }
+
+        /* Stat pill */
         .stat-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
-          border-radius: 999px;
-          padding: 6px 16px;
-          font-size: 0.8rem;
-          color: rgba(255,255,255,0.6);
-          transition: background 0.2s ease, border-color 0.2s ease;
+          display:inline-flex; align-items:center; gap:7px;
+          border:1px solid rgba(255,255,255,0.07);
+          background:rgba(255,255,255,0.025);
+          border-radius:999px; padding:6px 16px;
+          font-size:0.8rem; color:rgba(255,255,255,0.5);
+          transition:background 0.18s;
         }
-        .stat-pill:hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.14);
-        }
+        .stat-pill:hover { background:rgba(255,255,255,0.042); }
 
-        /* ── Bottom bar ── */
-        .bottom-bar {
-          background: rgba(5,8,16,0.88);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border-top: 1px solid rgba(255,255,255,0.06);
+        /* Unit summary card */
+        .unit-card {
+          background:rgba(255,255,255,0.02);
+          border:1px solid rgba(255,255,255,0.055);
+          border-radius:14px; padding:16px 20px;
+          display:flex; align-items:center; justify-content:space-between; gap:12px;
+          transition:background 0.18s, border-color 0.18s;
         }
+        .unit-card:hover { background:rgba(255,255,255,0.032); border-color:rgba(255,255,255,0.09); }
 
-        /* ── Bottom bar buttons ── */
+        /* Bottom bar */
+        .btm-bar {
+          background:rgba(5,8,16,0.92);
+          backdrop-filter:blur(28px);
+          -webkit-backdrop-filter:blur(28px);
+          border-top:1px solid rgba(255,255,255,0.05);
+        }
         .btn-ghost {
-          border: 1px solid rgba(255,255,255,0.12);
-          background: transparent;
-          color: rgba(255,255,255,0.65);
-          border-radius: 999px;
-          padding: 9px 20px;
-          font-size: 0.82rem;
-          font-weight: 500;
-          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-          cursor: pointer;
+          border:1px solid rgba(255,255,255,0.1); background:transparent;
+          color:rgba(255,255,255,0.5); border-radius:999px;
+          padding:9px 20px; font-size:0.82rem; font-weight:500; cursor:pointer;
+          transition:background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+          will-change:transform;
         }
-        .btn-ghost:hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.2);
-          color: rgba(255,255,255,0.85);
-          transform: translateY(-1px);
+        .btn-ghost:hover { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.16); color:rgba(255,255,255,0.78); transform:translate3d(0,-1px,0); }
+        .btn-white {
+          background:#fff; color:#050810; border:none;
+          border-radius:999px; padding:9px 22px;
+          font-size:0.82rem; font-weight:600; cursor:pointer;
+          transition:opacity 0.18s, transform 0.18s, box-shadow 0.18s;
+          will-change:transform;
         }
-        .btn-solid {
-          background: #ffffff;
-          color: #050810;
-          border: none;
-          border-radius: 999px;
-          padding: 9px 22px;
-          font-size: 0.82rem;
-          font-weight: 600;
-          transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-          cursor: pointer;
+        .btn-white:hover { opacity:0.88; transform:translate3d(0,-1px,0); box-shadow:0 4px 20px rgba(255,255,255,0.1); }
+        .btn-white:active { transform:scale(0.97); }
+        .btn-export {
+          background:transparent; border:1px solid rgba(255,255,255,0.1);
+          color:rgba(255,255,255,0.5); border-radius:999px;
+          padding:9px 20px; font-size:0.82rem; font-weight:500; cursor:pointer;
+          transition:background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+          will-change:transform;
         }
-        .btn-solid:hover {
-          opacity: 0.92;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 20px rgba(255,255,255,0.12);
-        }
-        .btn-solid:active { transform: scale(0.97); }
+        .btn-export:hover { background:rgba(59,111,212,0.09); border-color:rgba(59,111,212,0.28); color:rgba(147,180,248,0.85); transform:translate3d(0,-1px,0); }
 
-        /* ── Section divider ── */
-        .section-label {
-          font-size: 10px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.18em;
-          color: rgba(255,255,255,0.22);
-          margin-bottom: 14px;
+        /* Ping */
+        @keyframes cpPing { 75%,100% { transform:scale(2.2); opacity:0; } }
+        .cp-ping { animation:cpPing 1.8s cubic-bezier(0,0,0.2,1) infinite; will-change:transform,opacity; }
+
+        /* Sec label */
+        .sec-lbl {
+          font-size:10px; font-weight:700;
+          text-transform:uppercase; letter-spacing:0.2em;
+          color:rgba(255,255,255,0.18); margin-bottom:20px;
         }
 
-        /* ── Ping ── */
-        @keyframes cpPing {
-          75%,100% { transform: scale(2.2); opacity: 0; }
+        @media (max-width:640px) {
+          .tab-btn { padding:7px 11px; font-size:0.76rem; }
         }
-        .cp-ping { animation: cpPing 1.8s cubic-bezier(0,0,0.2,1) infinite; }
       `}</style>
 
       <div className="res-bg relative min-h-screen font-body">
         <div className="res-bg fixed inset-0 -z-10" aria-hidden />
         <Navbar />
 
-        <div className="mx-auto max-w-[760px] px-5 pb-36 pt-12 md:pt-16">
+        <div className="mx-auto max-w-[860px] px-5 pb-32 pt-10 sm:px-8 md:pt-14">
 
-          {/* ── Header ── */}
+          {/* ── HEADER ── */}
           {mounted && (
-            <div className="b-reveal bd1 mb-10">
-              <p className="mb-2 text-xs text-white/28">
+            <div className="b-rev bd1 mb-10">
+              <p className="mb-2.5 text-[11px] tracking-wide text-white/22">
                 Analysis Complete · {fmt(data.timestamp)} · {data.totalYearsAnalyzed ?? 0} years analyzed
               </p>
-              <h1 className="font-heading text-[2rem] font-bold leading-tight tracking-tight text-white md:text-[2.5rem]">
+              <h1
+                className="font-heading font-bold leading-tight tracking-tight text-white"
+                style={{ fontSize: "clamp(1.7rem, 5vw, 2.6rem)" }}
+              >
                 {data.subject ?? "General"}
-                <span className="text-white/35"> — Exam Probables</span>
+                <span style={{ color: "rgba(255,255,255,0.24)" }}> — Exam Probables</span>
               </h1>
-              <div className="mt-5 flex flex-wrap gap-2.5">
+
+              <div className="mt-5 flex flex-wrap gap-2">
                 <span className="stat-pill">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="cp-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    <span className="cp-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-55" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
                   </span>
-                  {data.superHighFrequencyTopics?.length ?? 0} super high-frequency topics
+                  {hfTopics.length} high-freq topics
                 </span>
                 <span className="stat-pill">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#3b6fd4]" />
-                  {data.units?.length ?? 0} units analyzed
+                  {data.units?.length ?? 0} units
                 </span>
-              </div>
-            </div>
-          )}
-
-          {/* ── Strategy ── */}
-          {mounted && (
-            <div className="b-reveal bd2 mb-12">
-              <p className="section-label">Exam Strategy</p>
-              <div className="strategy-card">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="text-base">💡</span>
-                  <span className="font-heading text-xs font-semibold uppercase tracking-widest text-[#3b6fd4]">
-                    Recommended Approach
+                <span className="stat-pill">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
+                  {totalQ} questions
+                </span>
+                {mustPrepare.length > 0 && (
+                  <span className="stat-pill">
+                    <span className="text-xs">🔥</span>
+                    {mustPrepare.length} must-prepare
                   </span>
-                </div>
-                <p className="text-[0.9rem] leading-relaxed text-white/60">
-                  {data.examStrategy ?? "Review high-frequency topics first."}
-                </p>
+                )}
               </div>
             </div>
           )}
 
-          {/* ── Super high frequency ── */}
-          {mounted && data.superHighFrequencyTopics?.length > 0 && (
-            <div className="b-reveal bd3 mb-14">
-              <p className="section-label">🔥 Must Prepare First</p>
-              <div className="flex flex-wrap gap-2">
-                {data.superHighFrequencyTopics.map((t, i) => (
-                  <span key={i} className="amber-pill">{t}</span>
+          {/* ── TAB BAR ── */}
+          {mounted && (
+            <div className="b-rev bd2 mb-10">
+              <div className="tab-bar">
+                {TABS.map(t => (
+                  <button
+                    key={t.key}
+                    className={`tab-btn ${activeTab === t.key ? "active" : ""}`}
+                    onClick={() => setActiveTab(t.key)}
+                  >
+                    {t.label}
+                    {t.count != null && t.count > 0 && (
+                      <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-px text-[9px] font-bold text-amber-400">
+                        {t.count}
+                      </span>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ── Units ── */}
-          {mounted && (
-            <div className="b-reveal bd4">
-              <p className="section-label mb-8">Unit-wise Probable Questions</p>
+          {/* ════════════════════════════
+              UNIT-WISE PROBABLES
+          ════════════════════════════ */}
+          {mounted && activeTab === "units" && (
+            <div className="b-rev bd3">
+              <p className="sec-lbl">Unit-wise Probable Questions</p>
               {data.units?.map((unit, idx) => (
-                <UnitSection key={unit.unitNumber} unit={unit} sectionIndex={idx} />
+                <UnitSection key={unit.unitNumber} unit={unit} idx={idx} />
               ))}
+            </div>
+          )}
+
+          {/* ════════════════════════════
+              EXAM STRATEGY
+          ════════════════════════════ */}
+          {mounted && activeTab === "strategy" && (
+            <div className="b-rev bd3">
+              <p className="sec-lbl">Exam Strategy</p>
+
+              <div className="strat-card mb-12">
+                <div className="mb-4 flex items-center gap-2.5">
+                  <span className="text-base">💡</span>
+                  <span className="font-heading text-[10px] font-bold uppercase tracking-widest text-[#3b6fd4]">
+                    Recommended Approach
+                  </span>
+                </div>
+                <p className="text-[0.95rem] leading-[1.75] text-white/55">
+                  {data.examStrategy ?? "Review high-frequency topics first."}
+                </p>
+              </div>
+
+              <p className="sec-lbl">Unit Priority Summary</p>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {data.units?.map(u => {
+                  const up = getP(u.unitPriority ?? u.priority);
+                  return (
+                    <div key={u.unitNumber} className="unit-card">
+                      <div>
+                        <p className="mb-0.5 text-[10px] text-white/22">Unit {u.unitNumber}</p>
+                        <p className="text-[0.88rem] font-medium text-white/72">{u.unitTitle}</p>
+                        <p className="mt-1 text-[11px] text-white/28">
+                          {u.probableQuestions?.length ?? 0} questions
+                        </p>
+                      </div>
+                      <span
+                        className="shrink-0 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide"
+                        style={{ background: up.bg, border: `1px solid ${up.border}`, color: up.color }}
+                      >
+                        {up.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════
+              HIGH FREQ TOPICS
+          ════════════════════════════ */}
+          {mounted && activeTab === "topics" && (
+            <div className="b-rev bd3">
+              <p className="sec-lbl">High Frequency Topics</p>
+
+              {hfTopics.length > 0 ? (
+                <div className="flex flex-wrap gap-2.5">
+                  {hfTopics.map((t, i) => (
+                    <span key={i} className="hft-pill">{t}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[0.9rem] text-white/28">
+                  No high-frequency topics detected — try adding more years of papers.
+                </p>
+              )}
+
+              {data.units?.some(u => u.topTopics?.length > 0) && (
+                <div className="mt-12">
+                  <p className="sec-lbl">Topics by Unit</p>
+                  <div className="space-y-6">
+                    {data.units?.map(u =>
+                      u.topTopics?.length > 0 ? (
+                        <div key={u.unitNumber}>
+                          <p className="mb-3 text-[0.82rem] font-medium text-white/38">
+                            Unit {u.unitNumber} — {u.unitTitle}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {u.topTopics.map((t, i) => (
+                              <span key={i} className="topic-pill rounded-full px-3 py-1 text-[11px] text-white/38">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════════
+              MUST PREPARE
+          ════════════════════════════ */}
+          {mounted && activeTab === "hf" && (
+            <div className="b-rev bd3">
+              <p className="sec-lbl">Must Prepare — High Frequency Questions</p>
+              <p className="mb-8 text-[0.88rem] leading-relaxed text-white/32">
+                Questions that appeared across multiple years. These are your highest-ROI topics —
+                prepare these before anything else.
+              </p>
+
+              {mustPrepare.length > 0 ? (
+                <div className="space-y-2.5">
+                  {mustPrepare.map((q, i) => (
+                    <HFCard key={i} q={q} index={i} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[0.9rem] text-white/28">
+                  No repeated questions found — add more years of papers for better results.
+                </p>
+              )}
             </div>
           )}
 
         </div>
 
-        {/* ── Bottom bar ── */}
-        <div className="bottom-bar fixed bottom-0 left-0 right-0 z-40 flex h-[60px] items-center justify-between px-5 md:px-8">
+        {/* ── BOTTOM BAR ── */}
+        <div className="btm-bar fixed bottom-0 left-0 right-0 z-40 flex h-[60px] items-center justify-between px-5 sm:px-8">
           <button className="btn-ghost" onClick={() => navigate("/analyze")}>
             ← Analyze Another
           </button>
           <div className="flex items-center gap-2">
-            <span className="hidden text-[11px] text-white/20 sm:block">
-              {data.units?.length} units · {data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0)} questions
-            </span>
-            <button className="btn-solid" onClick={copyResults}>
+            <button className="btn-export hidden sm:inline-flex" onClick={() => doExport(data)}>
+              Export ↓
+            </button>
+            <button className="btn-white" onClick={copyResults}>
               {copied ? "Copied ✓" : "Copy Results"}
             </button>
           </div>

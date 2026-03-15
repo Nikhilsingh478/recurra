@@ -1,57 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
 
+/* ─────────────────────────────────────────────
+   LOADING MESSAGES
+───────────────────────────────────────────── */
 const LOADING_MESSAGES = [
   "Reading your syllabus...",
-  "Identifying question patterns...",
-  "Analyzing repetition frequency...",
-  "Generating high-probability questions...",
+  "Scanning question papers...",
+  "Mapping repetition patterns...",
+  "Ranking by frequency & priority...",
   "Finalizing your exam strategy...",
 ];
 
-const ANALYSIS_PROMPT = `You are an expert exam analyst. You will be given a university syllabus and previous year question papers.
+/* ─────────────────────────────────────────────
+   GEMINI PROMPT — updated priority logic
+───────────────────────────────────────────── */
+const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
 
-Your task is to:
-1. Filter only questions that are relevant to the provided syllabus
-2. Identify which topics and questions repeat across years
-3. Generate high-probability exam questions unit-wise
-4. Count how many times each topic appeared across all papers
+STRICT RULES FOR QUESTION INCLUSION:
+- Include a question ONLY if it is directly tied to a topic explicitly mentioned in the syllabus
+- Do NOT include questions that are out-of-syllabus even if they appeared in papers
+- Do NOT pad the list — quality over quantity
+- Maximum 8 questions per unit, ideally 4-6
+- Sort questions within each unit from highest frequency to lowest frequency
 
-Return your response ONLY as a valid JSON object. No markdown. No explanation. No backticks.
+PRIORITY SYSTEM (apply exactly):
+- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority "LOW"
+- frequency = 2: "HIGH" priority
+- frequency >= 3: "HIGHEST" priority  
+- Unit-level priority: "HIGHEST" if any question has frequency >= 3, "HIGH" if any has frequency = 2, "LOW" otherwise
 
-The JSON structure must be exactly:
+FREQUENCY COUNTING:
+- Count how many different year papers contain a question about this topic/concept
+- Similar questions about the same concept count as the same question
+- Be conservative — if unsure whether two questions match, count them separately
+
+Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
+
+JSON structure:
 {
-  "subject": "detected subject name or General",
-  "totalYearsAnalyzed": 0,
+  "subject": "detected subject name",
+  "totalYearsAnalyzed": <number of distinct years found in papers>,
   "units": [
     {
       "unitNumber": 1,
-      "unitTitle": "unit title from syllabus",
-      "priority": "HIGH",
+      "unitTitle": "exact unit title from syllabus",
+      "unitPriority": "HIGHEST" | "HIGH" | "LOW",
       "probableQuestions": [
         {
-          "question": "question text",
-          "frequency": 0,
-          "isHighFrequency": false
+          "question": "concise question text",
+          "frequency": <number>,
+          "priority": "HIGHEST" | "HIGH" | "LOW"
         }
       ],
       "topTopics": ["topic1", "topic2", "topic3"]
     }
   ],
-  "examStrategy": "2-3 sentence overall strategy tip",
-  "superHighFrequencyTopics": ["topic1", "topic2"]
+  "examStrategy": "2-3 sentence focused strategy tip based on the actual patterns found",
+  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
+  "highFrequencyQuestions": [
+    {
+      "question": "question text",
+      "frequency": <number>,
+      "unit": "unit title"
+    }
+  ]
 }
 
-Rules:
-- Maximum 10 probable questions per unit
-- Only include questions relevant to the syllabus
-- isHighFrequency = true if frequency >= 3
-- Priority HIGH if unit has 3+ high frequency questions
-- Priority MEDIUM if 1-2 high frequency questions
-- Priority LOW otherwise
-- Keep question text concise and clear
+For highFrequencyQuestions: include ONLY questions with frequency >= 2, sorted by frequency descending. These are the student's must-prepare list.
+For highFrequencyTopics: topics that appear across multiple units or multiple years.
 
 SYLLABUS:
 {{SYLLABUS}}
@@ -59,64 +78,68 @@ SYLLABUS:
 PREVIOUS YEAR PAPERS:
 {{PAPERS}}`;
 
+/* ─────────────────────────────────────────────
+   COMPONENT
+───────────────────────────────────────────── */
 const Analyze = () => {
   const navigate = useNavigate();
-  const [syllabus, setSyllabus] = useState("");
-  const [papers, setPapers] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [syllabus, setSyllabus]         = useState("");
+  const [papers, setPapers]             = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [msgIndex, setMsgIndex]         = useState(0);
+  const [progress, setProgress]         = useState(0);
   const [shakeSyllabus, setShakeSyllabus] = useState(false);
-  const [shakePapers, setShakePapers] = useState(false);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [progressWidth, setProgressWidth] = useState(0);
-  const [errorSyllabus, setErrorSyllabus] = useState(false);
-  const [errorPapers, setErrorPapers] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [syllabusFocused, setSyllabusFocused] = useState(false);
-  const [papersFocused, setPapersFocused] = useState(false);
+  const [shakePapers, setShakePapers]   = useState(false);
+  const [errSyllabus, setErrSyllabus]   = useState(false);
+  const [errPapers, setErrPapers]       = useState(false);
+  const [mounted, setMounted]           = useState(false);
+  const [s1Focused, setS1Focused]       = useState(false);
+  const [s2Focused, setS2Focused]       = useState(false);
+  const [msgVisible, setMsgVisible]     = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 60);
+    const t = setTimeout(() => setMounted(true), 80);
     return () => clearTimeout(t);
   }, []);
 
-  const syllabusCount = syllabus.length;
-  const papersCount = papers.length;
   const bothFilled = syllabus.trim().length > 0 && papers.trim().length > 0;
 
-  const triggerShake = (field: "syllabus" | "papers") => {
+  const shake = useCallback((field: "syllabus" | "papers") => {
     if (field === "syllabus") {
-      setShakeSyllabus(true);
-      setErrorSyllabus(true);
-      setTimeout(() => setShakeSyllabus(false), 400);
+      setShakeSyllabus(true); setErrSyllabus(true);
+      setTimeout(() => setShakeSyllabus(false), 450);
     } else {
-      setShakePapers(true);
-      setErrorPapers(true);
-      setTimeout(() => setShakePapers(false), 400);
+      setShakePapers(true); setErrPapers(true);
+      setTimeout(() => setShakePapers(false), 450);
     }
-  };
+  }, []);
 
   const runAnalysis = async () => {
-    if (!syllabus.trim()) { triggerShake("syllabus"); return; }
-    if (!papers.trim()) { triggerShake("papers"); return; }
-    setErrorSyllabus(false);
-    setErrorPapers(false);
+    if (!syllabus.trim()) { shake("syllabus"); return; }
+    if (!papers.trim())   { shake("papers");   return; }
+    setErrSyllabus(false); setErrPapers(false);
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      toast({ description: "API key not configured. Please add VITE_GEMINI_API_KEY to .env", variant: "destructive" });
+      toast({ description: "API key not configured. Add VITE_GEMINI_API_KEY to .env", variant: "destructive" });
       return;
     }
 
     setLoading(true);
-    setLoadingMessageIndex(0);
-    setProgressWidth(0);
+    setMsgIndex(0);
+    setProgress(0);
+    setMsgVisible(true);
 
-    const progressInterval = setInterval(() => {
-      setProgressWidth((w) => Math.min(w + 1.4, 88));
-    }, 400);
-    const messageInterval = setInterval(() => {
-      setLoadingMessageIndex((i) => (i + 1) % LOADING_MESSAGES.length);
-    }, 2600);
+    const progInterval = setInterval(() =>
+      setProgress(w => Math.min(w + 1.2, 88)), 380);
+
+    const msgInterval = setInterval(() => {
+      setMsgVisible(false);
+      setTimeout(() => {
+        setMsgIndex(i => (i + 1) % LOADING_MESSAGES.length);
+        setMsgVisible(true);
+      }, 250);
+    }, 2800);
 
     const prompt = ANALYSIS_PROMPT
       .replace("{{SYLLABUS}}", syllabus.trim())
@@ -124,7 +147,7 @@ const Analyze = () => {
 
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`,
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
@@ -136,18 +159,17 @@ const Analyze = () => {
       );
 
       const data = await res.json();
-      console.log("API Response:", data);
-      if (!res.ok) { console.error("API Error:", data); throw new Error(`API error: ${res.status}`); }
+      if (!res.ok) throw new Error(`API ${res.status}`);
 
-      clearInterval(progressInterval);
-      clearInterval(messageInterval);
-      setProgressWidth(100);
+      clearInterval(progInterval);
+      clearInterval(msgInterval);
+      setProgress(100);
 
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error("No response from API");
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!raw) throw new Error("Empty response");
 
-      const jsonStr = text.replace(/^```json\s*|\s*```$/g, "").trim();
-      const result = JSON.parse(jsonStr);
+      const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+      const result = JSON.parse(clean);
 
       localStorage.setItem("recurra_results", JSON.stringify({
         ...result,
@@ -155,11 +177,11 @@ const Analyze = () => {
         subject: result.subject || "General",
       }));
 
-      setTimeout(() => navigate("/results"), 500);
+      setTimeout(() => navigate("/results"), 400);
     } catch (err) {
-      console.error("Caught error:", err);
-      clearInterval(progressInterval);
-      clearInterval(messageInterval);
+      console.error(err);
+      clearInterval(progInterval);
+      clearInterval(msgInterval);
       setLoading(false);
       toast({ description: "Analysis failed. Please check your inputs and try again.", variant: "destructive" });
     }
@@ -167,290 +189,368 @@ const Analyze = () => {
 
   return (
     <>
+      {/* ── Styles ── */}
       <style>{`
-        /* ── Blur-in reveal (Copilot style) ── */
+        /* GPU-composited blur reveal — no jitter */
         @keyframes blurReveal {
-          from { opacity: 0; filter: blur(14px); transform: translateY(12px); }
-          to   { opacity: 1; filter: blur(0px);  transform: translateY(0); }
+          from {
+            opacity: 0;
+            filter: blur(10px);
+            transform: translate3d(0, 14px, 0);
+          }
+          to {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0);
+          }
         }
         .reveal {
           opacity: 0;
-          animation: blurReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: opacity, filter, transform;
+          animation: blurReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        .d1 { animation-delay: 0.05s; }
-        .d2 { animation-delay: 0.17s; }
-        .d3 { animation-delay: 0.29s; }
-        .d4 { animation-delay: 0.38s; }
-        .d5 { animation-delay: 0.47s; }
-        .d6 { animation-delay: 0.56s; }
+        .d1 { animation-delay: 0.08s; }
+        .d2 { animation-delay: 0.18s; }
+        .d3 { animation-delay: 0.28s; }
+        .d4 { animation-delay: 0.36s; }
+        .d5 { animation-delay: 0.44s; }
+        .d6 { animation-delay: 0.52s; }
 
-        /* ── Ambient background ── */
+        /* Background */
         .az-bg {
           background:
-            radial-gradient(ellipse 65% 45% at 12% 8%,  rgba(28, 55, 130, 0.18) 0%, transparent 65%),
-            radial-gradient(ellipse 50% 38% at 88% 88%, rgba(15, 35, 95,  0.15) 0%, transparent 65%),
+            radial-gradient(ellipse 70% 50% at 10% 0%,   rgba(30, 58, 138, 0.15) 0%, transparent 60%),
+            radial-gradient(ellipse 55% 45% at 90% 100%, rgba(17, 38, 100, 0.12) 0%, transparent 60%),
             #050810;
         }
 
-        /* ── Top progress bar ── */
+        /* Top progress bar — GPU only */
         .top-bar {
           position: fixed;
-          top: 0; left: 0;
-          height: 1.5px;
-          z-index: 100;
-          background: linear-gradient(90deg, #3b6fd4, #93b4f8, #3b6fd4);
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          z-index: 200;
+          transform-origin: left center;
+          background: linear-gradient(90deg, #2d5bbf, #6ea0f7, #2d5bbf);
           background-size: 200% 100%;
-          animation: topBarMove 1.6s linear infinite;
-          transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 0 10px rgba(59,111,212,0.75), 0 0 24px rgba(59,111,212,0.3);
+          animation: barShine 1.8s linear infinite;
+          box-shadow: 0 0 12px rgba(59, 111, 212, 0.7);
+          will-change: transform;
         }
-        @keyframes topBarMove {
+        @keyframes barShine {
           0%   { background-position: 100% 0; }
           100% { background-position: -100% 0; }
         }
 
-        /* ── Shake ── */
+        /* Shake — transform only */
         @keyframes shake {
-          0%,100% { transform: translateX(0); }
-          15%  { transform: translateX(-7px); }
-          30%  { transform: translateX(6px); }
-          45%  { transform: translateX(-5px); }
-          60%  { transform: translateX(4px); }
-          75%  { transform: translateX(-3px); }
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          18%  { transform: translate3d(-7px, 0, 0); }
+          36%  { transform: translate3d(6px, 0, 0); }
+          54%  { transform: translate3d(-5px, 0, 0); }
+          72%  { transform: translate3d(4px, 0, 0); }
+          88%  { transform: translate3d(-2px, 0, 0); }
         }
-        .do-shake { animation: shake 0.42s cubic-bezier(.36,.07,.19,.97) both; }
+        .do-shake {
+          will-change: transform;
+          animation: shake 0.44s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
 
-        /* ── Textarea ── */
+        /* Textarea */
         .az-ta {
           width: 100%;
           resize: vertical;
-          background: rgba(255,255,255,0.025);
-          border: 1px solid rgba(255,255,255,0.07);
+          min-height: 160px;
+          background: rgba(255, 255, 255, 0.022);
+          border: 1px solid rgba(255, 255, 255, 0.07);
           border-radius: 14px;
-          padding: 18px 20px;
-          color: rgba(255,255,255,0.88);
+          padding: 16px 18px;
+          color: rgba(255, 255, 255, 0.88);
           font-size: 0.875rem;
           line-height: 1.75;
           font-family: inherit;
-          transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
           outline: none;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        .az-ta::placeholder { color: rgba(255,255,255,0.16); }
+        .az-ta::placeholder { color: rgba(255, 255, 255, 0.15); }
         .az-ta:focus {
-          border-color: rgba(59,111,212,0.5);
-          background: rgba(59,111,212,0.03);
-          box-shadow: 0 0 0 4px rgba(59,111,212,0.07), inset 0 1px 3px rgba(0,0,0,0.3);
+          border-color: rgba(59, 111, 212, 0.5);
+          background: rgba(59, 111, 212, 0.028);
+          box-shadow: 0 0 0 4px rgba(59, 111, 212, 0.07);
         }
-        .az-ta.az-err {
-          border-color: rgba(239,68,68,0.4);
-          box-shadow: 0 0 0 4px rgba(239,68,68,0.05);
+        .az-ta.err {
+          border-color: rgba(239, 68, 68, 0.4);
+          box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.05);
         }
 
-        /* ── Stepper connector ── */
-        .s-line {
+        /* Stepper */
+        .step-line {
           position: absolute;
           left: 11px;
-          top: 30px;
-          bottom: -24px;
+          top: 28px;
+          bottom: -20px;
           width: 1px;
-          background: linear-gradient(to bottom, rgba(59,111,212,0.35), rgba(59,111,212,0.04) 90%, transparent);
+          background: linear-gradient(
+            to bottom,
+            rgba(59, 111, 212, 0.3) 0%,
+            rgba(59, 111, 212, 0.03) 85%,
+            transparent 100%
+          );
         }
-
-        /* ── Step badge ── */
-        .s-badge {
+        .step-num {
           width: 24px; height: 24px;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
-          font-size: 0.68rem; font-weight: 600; flex-shrink: 0;
-          transition: all 0.3s ease;
-          margin-top: 2px;
+          font-size: 0.68rem; font-weight: 600;
+          flex-shrink: 0;
+          transition: background 0.25s ease, border-color 0.25s ease,
+                      color 0.25s ease, box-shadow 0.25s ease;
         }
-        .s-idle   { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.28); }
-        .s-active { background: rgba(59,111,212,0.18);  border: 1px solid rgba(59,111,212,0.45); color: #7ba4f0; box-shadow: 0 0 10px rgba(59,111,212,0.22); }
-        .s-done   { background: rgba(59,111,212,0.12);  border: 1px solid rgba(59,111,212,0.3);  color: #3b6fd4; }
+        .sn-idle   { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.25); }
+        .sn-active { background: rgba(59,111,212,0.16);  border: 1px solid rgba(59,111,212,0.45);  color: #93b4f8;
+                     box-shadow: 0 0 0 4px rgba(59,111,212,0.07); }
+        .sn-done   { background: rgba(59,111,212,0.1);   border: 1px solid rgba(59,111,212,0.28);  color: #5a8ae8; }
 
-        /* ── Char micro bar ── */
-        .c-track { height: 2px; width: 72px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
-        .c-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #3b6fd4, #7ba4f0); transition: width 0.3s ease; }
+        /* Char bar */
+        .c-track { height: 2px; width: 64px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+        .c-fill  {
+          height: 100%; border-radius: 999px;
+          background: linear-gradient(90deg, #3b6fd4, #93b4f8);
+          transition: width 0.35s ease;
+          will-change: width;
+        }
 
-        /* ── Button ── */
+        /* CTA button */
         @keyframes shimmer {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
         }
-        .btn-on {
-          background: linear-gradient(105deg, #ffffff 36%, #d4e0ff 50%, #ffffff 64%);
+        .btn-ready {
+          background: linear-gradient(108deg, #fff 35%, #dce8ff 50%, #fff 65%);
           background-size: 200% auto;
-          animation: shimmer 2.8s linear infinite;
+          animation: shimmer 3s linear infinite;
           color: #050810;
-          box-shadow: 0 0 0 0 rgba(255,255,255,0);
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
+          will-change: transform;
+          transition: transform 0.22s ease, box-shadow 0.22s ease;
         }
-        .btn-on:hover {
-          transform: scale(1.013);
-          box-shadow: 0 6px 36px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.4);
+        .btn-ready:hover {
+          transform: scale(1.012);
+          box-shadow: 0 8px 32px rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.35);
         }
-        .btn-on:active { transform: scale(0.996); }
-        .btn-off { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.2); cursor: not-allowed; }
+        .btn-ready:active  { transform: scale(0.997); }
+        .btn-muted { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.22); cursor: not-allowed; }
 
-        /* ── Dot loader ── */
-        @keyframes dpulse {
-          0%,80%,100% { transform: scale(0.55); opacity: 0.25; }
-          40%          { transform: scale(1);    opacity: 1; }
+        /* Loading dots */
+        @keyframes ldot {
+          0%, 80%, 100% { transform: scale3d(0.55, 0.55, 1); opacity: 0.2; }
+          40%            { transform: scale3d(1, 1, 1);       opacity: 1; }
         }
-        .dp { display:inline-block; width:5px; height:5px; border-radius:50%; background:currentColor; }
-        .dp1 { animation: dpulse 1.1s ease-in-out infinite 0s; }
-        .dp2 { animation: dpulse 1.1s ease-in-out infinite 0.18s; }
-        .dp3 { animation: dpulse 1.1s ease-in-out infinite 0.36s; }
+        .ld { display:inline-block; width:5px; height:5px; border-radius:50%; background:currentColor; will-change: transform, opacity; }
+        .ld1 { animation: ldot 1.1s ease-in-out infinite 0s; }
+        .ld2 { animation: ldot 1.1s ease-in-out infinite 0.17s; }
+        .ld3 { animation: ldot 1.1s ease-in-out infinite 0.34s; }
 
-        /* ── Msg fade ── */
-        @keyframes msgIn {
-          from { opacity:0; filter:blur(6px); transform:translateY(5px); }
-          to   { opacity:1; filter:blur(0);   transform:translateY(0); }
+        /* Loading msg */
+        @keyframes msgBlurIn {
+          from { opacity:0; filter:blur(5px); transform: translate3d(0, 5px, 0); }
+          to   { opacity:1; filter:blur(0);   transform: translate3d(0, 0, 0); }
         }
-        .msg-in { animation: msgIn 0.38s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .msg-in {
+          will-change: opacity, filter, transform;
+          animation: msgBlurIn 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+        .msg-out { opacity: 0; }
 
-        /* ── Ping ── */
+        /* Ping */
         @keyframes cpPing {
-          75%,100% { transform: scale(2.2); opacity: 0; }
+          75%, 100% { transform: scale(2.1); opacity: 0; }
         }
-        .cp-ping { animation: cpPing 1.6s cubic-bezier(0,0,0.2,1) infinite; }
+        .cp-ping { animation: cpPing 1.8s cubic-bezier(0,0,0.2,1) infinite; will-change: transform, opacity; }
 
-        /* ── Feature cards ── */
-        .feat-card {
+        /* Hint cards */
+        .hint-card {
           border: 1px solid rgba(255,255,255,0.055);
-          background: rgba(255,255,255,0.018);
+          background: rgba(255,255,255,0.016);
           border-radius: 14px;
-          padding: 16px;
-          transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+          padding: 15px;
+          transition: border-color 0.22s ease, background 0.22s ease, transform 0.22s ease;
+          will-change: transform;
         }
-        .feat-card:hover {
-          border-color: rgba(59,111,212,0.2);
-          background: rgba(59,111,212,0.035);
-          transform: translateY(-2px);
+        .hint-card:hover {
+          border-color: rgba(59,111,212,0.22);
+          background: rgba(59,111,212,0.032);
+          transform: translate3d(0, -2px, 0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+          .page-heading { font-size: 2rem !important; }
+          .page-sub { font-size: 0.9rem !important; }
+          .az-ta { font-size: 0.82rem; padding: 14px 15px; }
         }
       `}</style>
 
-      {/* Top loading bar */}
-      {loading && <div className="top-bar" style={{ width: `${progressWidth}%` }} />}
+      {/* Top progress bar */}
+      {loading && (
+        <div
+          className="top-bar"
+          style={{ transform: `scaleX(${progress / 100})` }}
+        />
+      )}
 
       <div className="az-bg relative min-h-screen font-body">
         <div className="az-bg fixed inset-0 -z-10" aria-hidden />
         <Navbar />
 
-        <div className="mx-auto max-w-[700px] px-5 pb-28 pt-14 md:pt-20">
+        <div className="mx-auto max-w-[680px] px-4 pb-24 pt-12 sm:px-6 md:pt-20">
 
-          {/* Badge */}
+          {/* ── Badge ── */}
           {mounted && (
             <div className="reveal d1 mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-4 py-1.5 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
-                <span className="cp-ping absolute inline-flex h-full w-full rounded-full bg-[#3b6fd4] opacity-55" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3b6fd4]" />
+                <span className="cp-ping absolute inline-flex h-full w-full rounded-full bg-[#3b6fd4] opacity-50" />
+                <span className="relative h-2 w-2 rounded-full bg-[#3b6fd4]" />
               </span>
-              <span className="text-xs font-medium tracking-wide text-[#8899aa]">AI-Powered Analysis</span>
+              <span className="text-[11px] font-medium tracking-wide text-[#8899aa]">
+                AI-Powered Exam Analysis
+              </span>
             </div>
           )}
 
-          {/* Headline */}
+          {/* ── Headline ── */}
           {mounted && (
             <div className="reveal d2 mb-5">
-              <h1 className="font-heading text-[2.5rem] font-bold leading-[1.08] tracking-tight text-white md:text-[3rem]">
+              <h1
+                className="page-heading font-heading font-bold leading-[1.07] tracking-tight text-white"
+                style={{ fontSize: "clamp(1.9rem, 5vw, 2.9rem)" }}
+              >
                 Drop Your Material.
                 <br />
-                <span style={{ color: "rgba(255,255,255,0.38)" }}>Get What Matters.</span>
+                <span style={{ color: "rgba(255,255,255,0.32)" }}>Get What Matters.</span>
               </h1>
             </div>
           )}
 
-          {/* Subtext */}
+          {/* ── Subtext ── */}
           {mounted && (
-            <div className="reveal d3 mb-14">
-              <p className="max-w-md text-[0.95rem] leading-relaxed text-[#8899aa]">
+            <div className="reveal d3 mb-12">
+              <p className="page-sub max-w-sm text-[0.93rem] leading-relaxed text-[#8899aa]">
                 Paste your syllabus and previous year papers.{" "}
-                <span className="text-white/45">Recurra</span> finds what repeats and surfaces the
-                questions most likely to appear.
+                <span className="text-white/40">Recurra</span> maps what repeats and
+                surfaces only the questions that actually matter.
               </p>
             </div>
           )}
 
-          {/* Stepper inputs */}
+          {/* ── Stepper ── */}
           {mounted && (
             <div className="reveal d4">
 
-              {/* ─ Input 01: Syllabus ─ */}
-              <div className="relative mb-10 flex gap-5">
+              {/* Step 01 — Syllabus */}
+              <div className="relative mb-10 flex gap-4 sm:gap-5">
                 <div className="relative flex flex-col items-center">
-                  <div className={`s-badge ${syllabus.trim() ? "s-done" : syllabusFocused ? "s-active" : "s-idle"}`}>01</div>
-                  <div className="s-line" />
+                  <div className={`step-num ${syllabus.trim() ? "sn-done" : s1Focused ? "sn-active" : "sn-idle"}`}>
+                    01
+                  </div>
+                  <div className="step-line" />
                 </div>
-                <div className="flex-1 pb-2">
-                  <div className="mb-3 flex items-center justify-between">
+
+                <div className="min-w-0 flex-1 pb-1">
+                  {/* Label row */}
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white/85">Your Syllabus</span>
-                      {errorSyllabus && (
-                        <span className="flex items-center gap-1 rounded-full bg-red-500/[0.12] px-2 py-0.5 text-[11px] font-medium text-red-400">
-                          <span className="h-1 w-1 rounded-full bg-red-400" />required
+                      <span className="text-[0.84rem] font-medium text-white/85">Your Syllabus</span>
+                      {errSyllabus && (
+                        <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-400">
+                          <span className="h-1 w-1 rounded-full bg-red-400" />
+                          required
                         </span>
                       )}
                     </div>
-                    {syllabusCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-white/22">{syllabusCount.toLocaleString()} chars</span>
+                    {syllabus.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-white/22">
+                          {syllabus.length.toLocaleString()} chars
+                        </span>
                         <div className="c-track">
-                          <div className="c-fill" style={{ width: `${Math.min((syllabusCount / 3000) * 100, 100)}%` }} />
+                          <div className="c-fill" style={{ width: `${Math.min((syllabus.length / 3000) * 100, 100)}%` }} />
                         </div>
                       </div>
                     )}
                   </div>
-                  <p className="mb-3 text-[11px] text-white/28">Paste your syllabus structured by units</p>
+                  <p className="mb-2.5 text-[11px] text-white/25">
+                    Paste your syllabus structured by units
+                  </p>
                   <div className={shakeSyllabus ? "do-shake" : ""}>
                     <textarea
                       value={syllabus}
-                      rows={9}
-                      onFocus={() => setSyllabusFocused(true)}
-                      onBlur={() => setSyllabusFocused(false)}
-                      onChange={(e) => { setSyllabus(e.target.value); setErrorSyllabus(false); }}
-                      placeholder={`Unit 1 — Data Structures\nStack, Queue, Linked List, Trees...\n\nUnit 2 — Algorithms\nSorting, Searching, Complexity...\n\nUnit 3 — ...`}
-                      className={`az-ta${errorSyllabus ? " az-err" : ""}`}
+                      rows={8}
+                      onFocus={() => setS1Focused(true)}
+                      onBlur={() => setS1Focused(false)}
+                      onChange={e => { setSyllabus(e.target.value); setErrSyllabus(false); }}
+                      placeholder={
+                        "Unit 1 — Data Structures\n" +
+                        "Stack, Queue, Linked List, Trees...\n\n" +
+                        "Unit 2 — Algorithms\n" +
+                        "Sorting, Searching, Complexity...\n\n" +
+                        "Unit 3 — ..."
+                      }
+                      className={`az-ta${errSyllabus ? " err" : ""}`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* ─ Input 02: Papers ─ */}
-              <div className="relative mb-12 flex gap-5">
+              {/* Step 02 — Papers */}
+              <div className="relative mb-10 flex gap-4 sm:gap-5">
                 <div className="flex flex-col items-center">
-                  <div className={`s-badge ${papers.trim() ? "s-done" : papersFocused ? "s-active" : "s-idle"}`}>02</div>
+                  <div className={`step-num ${papers.trim() ? "sn-done" : s2Focused ? "sn-active" : "sn-idle"}`}>
+                    02
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="mb-3 flex items-center justify-between">
+
+                <div className="min-w-0 flex-1">
+                  {/* Label row */}
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white/85">Previous Year Papers</span>
-                      {errorPapers && (
-                        <span className="flex items-center gap-1 rounded-full bg-red-500/[0.12] px-2 py-0.5 text-[11px] font-medium text-red-400">
-                          <span className="h-1 w-1 rounded-full bg-red-400" />required
+                      <span className="text-[0.84rem] font-medium text-white/85">Previous Year Papers</span>
+                      {errPapers && (
+                        <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-400">
+                          <span className="h-1 w-1 rounded-full bg-red-400" />
+                          required
                         </span>
                       )}
                     </div>
-                    {papersCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-white/22">{papersCount.toLocaleString()} chars</span>
+                    {papers.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-white/22">
+                          {papers.length.toLocaleString()} chars
+                        </span>
                         <div className="c-track">
-                          <div className="c-fill" style={{ width: `${Math.min((papersCount / 8000) * 100, 100)}%` }} />
+                          <div className="c-fill" style={{ width: `${Math.min((papers.length / 8000) * 100, 100)}%` }} />
                         </div>
                       </div>
                     )}
                   </div>
-                  <p className="mb-3 text-[11px] text-white/28">More years of papers = sharper predictions</p>
+                  <p className="mb-2.5 text-[11px] text-white/25">
+                    More years = sharper predictions. Paste all you have.
+                  </p>
                   <div className={shakePapers ? "do-shake" : ""}>
                     <textarea
                       value={papers}
-                      rows={12}
-                      onFocus={() => setPapersFocused(true)}
-                      onBlur={() => setPapersFocused(false)}
-                      onChange={(e) => { setPapers(e.target.value); setErrorPapers(false); }}
-                      placeholder={`2023 Paper:\nQ1. Explain the working of a stack with example.\nQ2. Write an algorithm for binary search...\n\n2022 Paper:\nQ1. What is a linked list? Explain types...\nQ2. Define time complexity...`}
-                      className={`az-ta${errorPapers ? " az-err" : ""}`}
+                      rows={11}
+                      onFocus={() => setS2Focused(true)}
+                      onBlur={() => setS2Focused(false)}
+                      onChange={e => { setPapers(e.target.value); setErrPapers(false); }}
+                      placeholder={
+                        "2023 Paper:\n" +
+                        "Q1. Explain the working of a stack with example.\n" +
+                        "Q2. Write an algorithm for binary search...\n\n" +
+                        "2022 Paper:\n" +
+                        "Q1. What is a linked list? Explain types...\n" +
+                        "Q2. Define time complexity and explain Big-O notation..."
+                      }
+                      className={`az-ta${errPapers ? " err" : ""}`}
                     />
                   </div>
                 </div>
@@ -458,54 +558,72 @@ const Analyze = () => {
             </div>
           )}
 
-          {/* CTA Button */}
+          {/* ── CTA ── */}
           {mounted && (
             <div className="reveal d5">
               <button
                 onClick={runAnalysis}
                 disabled={loading}
-                className={`flex h-[54px] w-full items-center justify-center rounded-full font-heading text-[0.92rem] font-semibold ${
-                  bothFilled && !loading ? "btn-on" : "btn-off"
+                className={`flex h-[52px] w-full items-center justify-center rounded-full font-heading text-[0.9rem] font-semibold ${
+                  bothFilled && !loading ? "btn-ready" : "btn-muted"
                 }`}
               >
                 {loading ? (
-                  <span className="flex items-center gap-3 text-white/40">
-                    <span className="flex items-center gap-[3px]">
-                      <span className="dp dp1" />
-                      <span className="dp dp2" />
-                      <span className="dp dp3" />
+                  <span className="flex items-center gap-3">
+                    <span className="flex items-center gap-[3px] text-white/40">
+                      <span className="ld ld1" />
+                      <span className="ld ld2" />
+                      <span className="ld ld3" />
                     </span>
-                    <span className="msg-in text-[0.83rem] text-white/55" key={loadingMessageIndex}>
-                      {LOADING_MESSAGES[loadingMessageIndex]}
+                    <span
+                      key={msgIndex}
+                      className={`text-[0.82rem] text-white/50 ${msgVisible ? "msg-in" : "msg-out"}`}
+                    >
+                      {LOADING_MESSAGES[msgIndex]}
                     </span>
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     Analyze & Generate Probables
-                    <span className="inline-block transition-transform duration-300 hover:translate-x-1">→</span>
+                    <span>→</span>
                   </span>
                 )}
               </button>
-              <p className="mt-3.5 text-center text-[11px] text-white/18">
-                {bothFilled ? "Powered by Gemini AI · ~15 seconds" : "Fill both fields above to continue"}
+
+              <p className="mt-3 text-center text-[10px] text-white/18">
+                {bothFilled
+                  ? "Powered by Gemini AI · typically under 20 seconds"
+                  : "Complete both fields above to continue"}
               </p>
             </div>
           )}
 
-          {/* Feature hint cards
+          {/* ── Hint cards ──
           {mounted && (
-            <div className="reveal d6 mt-16 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <div className="reveal d6 mt-14 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {[
-                { sym: "◈", title: "Syllabus-filtered",  sub: "Out-of-scope questions removed" },
-                { sym: "◎", title: "Pattern-aware",      sub: "Repetition tracked across years" },
-                { sym: "◇", title: "Priority ranked",    sub: "Highest value questions first"  },
-              ].map((c) => (
-                <div key={c.title} className="feat-card group">
-                  <span className="mb-2.5 block text-sm text-[#3b6fd4] opacity-60 transition-opacity duration-300 group-hover:opacity-100">
+                {
+                  sym: "◈",
+                  title: "Syllabus-filtered",
+                  sub: "Out-of-scope questions stripped out",
+                },
+                {
+                  sym: "◎",
+                  title: "Frequency-ranked",
+                  sub: "Repeated questions surface first",
+                },
+                {
+                  sym: "◇",
+                  title: "High-ROI focus",
+                  sub: "Only questions worth your time",
+                },
+              ].map(c => (
+                <div key={c.title} className="hint-card">
+                  <span className="mb-2 block text-sm text-[#3b6fd4] opacity-55 transition-opacity duration-200 group-hover:opacity-100">
                     {c.sym}
                   </span>
-                  <p className="text-xs font-medium text-white/65">{c.title}</p>
-                  <p className="mt-0.5 text-[11px] text-white/28">{c.sub}</p>
+                  <p className="text-[0.78rem] font-medium text-white/60">{c.title}</p>
+                  <p className="mt-0.5 text-[10px] text-white/25">{c.sub}</p>
                 </div>
               ))}
             </div>
