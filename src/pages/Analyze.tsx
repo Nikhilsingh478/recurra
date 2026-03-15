@@ -83,19 +83,19 @@ PREVIOUS YEAR PAPERS:
 ───────────────────────────────────────────── */
 const Analyze = () => {
   const navigate = useNavigate();
-  const [syllabus, setSyllabus]         = useState("");
-  const [papers, setPapers]             = useState("");
-  const [loading, setLoading]           = useState(false);
-  const [msgIndex, setMsgIndex]         = useState(0);
-  const [progress, setProgress]         = useState(0);
+  const [syllabus, setSyllabus] = useState("");
+  const [papers, setPapers] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [shakeSyllabus, setShakeSyllabus] = useState(false);
-  const [shakePapers, setShakePapers]   = useState(false);
-  const [errSyllabus, setErrSyllabus]   = useState(false);
-  const [errPapers, setErrPapers]       = useState(false);
-  const [mounted, setMounted]           = useState(false);
-  const [s1Focused, setS1Focused]       = useState(false);
-  const [s2Focused, setS2Focused]       = useState(false);
-  const [msgVisible, setMsgVisible]     = useState(true);
+  const [shakePapers, setShakePapers] = useState(false);
+  const [errSyllabus, setErrSyllabus] = useState(false);
+  const [errPapers, setErrPapers] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [s1Focused, setS1Focused] = useState(false);
+  const [s2Focused, setS2Focused] = useState(false);
+  const [msgVisible, setMsgVisible] = useState(true);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 80);
@@ -116,7 +116,26 @@ const Analyze = () => {
 
   const runAnalysis = async () => {
     if (!syllabus.trim()) { shake("syllabus"); return; }
-    if (!papers.trim())   { shake("papers");   return; }
+    if (!papers.trim()) { shake("papers"); return; }
+
+    // ── Input quality validation ──
+    const isGarbage = (text: string) => {
+      const words = text.trim().split(/\s+/);
+      if (words.length < 10) return true;
+      if (text.length < 80) return true;
+      return false;
+    };
+    if (isGarbage(syllabus)) {
+      shake("syllabus");
+      toast({ description: "Please paste a proper unit-wise syllabus with at least a few units.", variant: "destructive" });
+      return;
+    }
+    if (isGarbage(papers)) {
+      shake("papers");
+      toast({ description: "Please paste at least one full question paper.", variant: "destructive" });
+      return;
+    }
+
     setErrSyllabus(false); setErrPapers(false);
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -171,6 +190,16 @@ const Analyze = () => {
       const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
       const result = JSON.parse(clean);
 
+      // ── Empty result check ──
+      const hasQuestions = result.units?.some((u: any) => u.probableQuestions?.length > 0);
+      if (!hasQuestions) {
+        clearInterval(progInterval);
+        clearInterval(msgInterval);
+        setLoading(false);
+        toast({ description: "No valid syllabus content found. Please paste a proper unit-wise syllabus.", variant: "destructive" });
+        return;
+      }
+
       localStorage.setItem("recurra_results", JSON.stringify({
         ...result,
         timestamp: new Date().toISOString(),
@@ -186,7 +215,6 @@ const Analyze = () => {
       toast({ description: "Analysis failed. Please check your inputs and try again.", variant: "destructive" });
     }
   };
-
   return (
     <>
       {/* ── Styles ── */}
@@ -564,9 +592,8 @@ const Analyze = () => {
               <button
                 onClick={runAnalysis}
                 disabled={loading}
-                className={`flex h-[52px] w-full items-center justify-center rounded-full font-heading text-[0.9rem] font-semibold ${
-                  bothFilled && !loading ? "btn-ready" : "btn-muted"
-                }`}
+                className={`flex h-[52px] w-full items-center justify-center rounded-full font-heading text-[0.9rem] font-semibold ${bothFilled && !loading ? "btn-ready" : "btn-muted"
+                  }`}
               >
                 {loading ? (
                   <span className="flex items-center gap-3">
