@@ -82,7 +82,7 @@ const Docs = () => {
 
         {/* ═══ SECTION 1 — HEADER ═══ */}
         <section className="pt-20 sm:pt-28 pb-16 sm:pb-24">
-          <div data-reveal style={revealStyle(0.08)} className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-6" style2="" >
+          <div data-reveal style={revealStyle(0.08)}>
             <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-6" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#3b6fd4]" />
               <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 500 }}>Documentation</span>

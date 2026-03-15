@@ -182,8 +182,8 @@ const Features = () => {
 
         {/* ═══ STATS ═══ */}
         <section className="pb-20 sm:pb-24">
-          <div data-reveal style={revealStyle(0.1)} className="docs-card grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style2="" >
-            <div className="rounded-[20px] p-8 sm:p-10 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, divideColor: "rgba(255,255,255,0.06)" }}>
+          <div data-reveal style={revealStyle(0.1)}>
+            <div className="rounded-[20px] p-8 sm:p-10 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20 }}>
               {[
                 { ref: stat1.ref, val: String(stat1.val), label: "Result sections", sub: "Units, Strategy, Topics, Must Prepare" },
                 { ref: stat2.ref, val: String(stat2.val), label: "Questions max per unit", sub: "Focused, not overwhelming" },
