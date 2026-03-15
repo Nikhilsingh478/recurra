@@ -7,6 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Analyze from "./pages/Analyze.tsx";
 import Results from "./pages/Results.tsx";
+import Docs from "./pages/Docs.tsx";
+import Features from "./pages/Features.tsx";
 
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/features" element={<Features />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route
             path="*"

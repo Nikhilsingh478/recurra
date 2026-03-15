@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import GlowButton from "./GlowButton";
 
 const navLinks: { name: string; href: string }[] = [
-  { name: "Docs", href: "#" },
+  { name: "Docs", href: "/docs" },
   { name: "Process", href: "#" },
   { name: "Analyze", href: "/analyze" },
-  { name: "Features", href: "#" },
+  { name: "Features", href: "/features" },
 ];
 
 const Navbar = () => {
