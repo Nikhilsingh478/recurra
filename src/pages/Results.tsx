@@ -892,6 +892,7 @@ const Results = () => {
           </div>
         </div>
       </div>
+      <FeedbackModal />
     </>
   );
 };
