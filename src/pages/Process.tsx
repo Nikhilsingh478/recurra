@@ -581,11 +581,11 @@ const Process = () => {
             </div>
             <div className="flex justify-between mt-0 relative" style={{ top: -5 }}>
               {[
-                { label: "Request sent", pos: "below" },
+                { label: "Request", pos: "below" },
                 { label: "Syllabus parsed", pos: "above" },
                 { label: "Patterns mapped", pos: "below" },
                 { label: "Questions ranked", pos: "above" },
-                { label: "Results ready", pos: "below" },
+                { label: "Results", pos: "below" },
               ].map((node, i) => (
                 <div key={i} className="flex flex-col items-center relative" style={{ opacity: tl.fill ? 1 : 0.3, transition: `opacity 0.5s ease ${0.4 + i * 0.35}s`, width: 0 }}>
                   <div className="rounded-full" style={{
