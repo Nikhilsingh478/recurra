@@ -60,6 +60,20 @@ const EmojiRating = ({ value, onChange }: { value: number; onChange: (v: number)
 
 /* ── Modal ── */
 const STORAGE_KEY = "recurra_feedback_seen";
+const SESSION_KEY = "recurra_feedback_session_id";
+
+const getSessionId = () => {
+  const existing = sessionStorage.getItem(SESSION_KEY);
+  if (existing) return existing;
+
+  const generated =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  sessionStorage.setItem(SESSION_KEY, generated);
+  return generated;
+};
 
 const FeedbackModal = () => {
   const [open, setOpen] = useState(false);
@@ -73,15 +87,18 @@ const FeedbackModal = () => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
+    const sessionId = getSessionId();
+    if (localStorage.getItem(STORAGE_KEY) === sessionId) return;
+
     const t = setTimeout(() => {
       setOpen(true);
       setPhase("entering");
-      localStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem(STORAGE_KEY, sessionId);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setPhase("visible"));
       });
     }, 90000);
+
     return () => clearTimeout(t);
   }, []);
 
