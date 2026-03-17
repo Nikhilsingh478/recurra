@@ -35,7 +35,7 @@ const HeroSection = () => {
         transition={{ duration: 1.1, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
         className="mt-5 md:mt-6 text-[14px] md:text-[15px] font-normal text-foreground/70 max-w-[680px] leading-relaxed"
       >
-        Upload your syllabus and previous year question papers and instantly discover high-probability exam questions, repetition patterns, and the topics most likely to appear in your exam.
+        Most students waste hours scanning old papers manually. Recurra does it in seconds and only shows you what actually repeats.
       </motion.p>
 
       {/* CTA */}
