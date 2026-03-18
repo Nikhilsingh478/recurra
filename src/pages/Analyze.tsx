@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import AnalysisLoader from "@/components/AnalysisLoader";
 import { toast } from "@/hooks/use-toast";
 
 /* ─────────────────────────────────────────────
