@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
         "/process",
         "/docs",
       ],
+      exclude: ["/googlee07c147967664aeb"],
     }),
   ].filter(Boolean),
   resolve: {
