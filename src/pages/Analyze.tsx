@@ -659,6 +659,12 @@ const Analyze = () => {
 
         </div>
       </div>
+
+      <AnalysisLoader
+        visible={loading}
+        message={LOADING_MESSAGES[msgIndex]}
+        progress={progress}
+      />
     </>
   );
 };
