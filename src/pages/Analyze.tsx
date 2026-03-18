@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import AnalysisLoader from "@/components/AnalysisLoader";
 import { toast } from "@/hooks/use-toast";
 
 /* ─────────────────────────────────────────────
@@ -658,6 +659,12 @@ const Analyze = () => {
 
         </div>
       </div>
+
+      <AnalysisLoader
+        visible={loading}
+        message={LOADING_MESSAGES[msgIndex]}
+        progress={progress}
+      />
     </>
   );
 };
