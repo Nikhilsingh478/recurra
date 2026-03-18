@@ -19,12 +19,11 @@ export default defineConfig(({ mode }) => ({
     Sitemap({
       hostname: "https://recurraio.vercel.app",
       readable: true,
+      changefreq: "monthly",
       dynamicRoutes: [
         "/features",
         "/process",
         "/docs",
-        "/analyze",
-        "/results",
       ],
     }),
   ].filter(Boolean),
