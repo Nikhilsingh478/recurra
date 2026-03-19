@@ -15,69 +15,7 @@ const LOADING_MESSAGES = [
   "Finalizing your exam strategy...",
 ];
 
-/* ─────────────────────────────────────────────
-   GEMINI PROMPT — updated priority logic
-───────────────────────────────────────────── */
-const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
-
-STRICT RULES FOR QUESTION INCLUSION:
-- Include a question ONLY if it is directly tied to a topic explicitly mentioned in the syllabus
-- Do NOT include questions that are out-of-syllabus even if they appeared in papers
-- Do NOT pad the list — quality over quantity
-- Maximum 8 questions per unit, ideally 4-6
-- Sort questions within each unit from highest frequency to lowest frequency
-
-PRIORITY SYSTEM (apply exactly):
-- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority "LOW"
-- frequency = 2: "HIGH" priority
-- frequency >= 3: "HIGHEST" priority  
-- Unit-level priority: "HIGHEST" if any question has frequency >= 3, "HIGH" if any has frequency = 2, "LOW" otherwise
-
-FREQUENCY COUNTING:
-- Count how many different year papers contain a question about this topic/concept
-- Similar questions about the same concept count as the same question
-- Be conservative — if unsure whether two questions match, count them separately
-
-Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
-
-JSON structure:
-{
-  "subject": "detected subject name",
-  "totalYearsAnalyzed": <number of distinct years found in papers>,
-  "units": [
-    {
-      "unitNumber": 1,
-      "unitTitle": "exact unit title from syllabus",
-      "unitPriority": "HIGHEST" | "HIGH" | "LOW",
-      "probableQuestions": [
-        {
-          "question": "concise question text",
-          "frequency": <number>,
-          "priority": "HIGHEST" | "HIGH" | "LOW"
-        }
-      ],
-      "topTopics": ["topic1", "topic2", "topic3"]
-    }
-  ],
-  "examStrategy": "2-3 sentence focused strategy tip based on the actual patterns found",
-  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
-  "highFrequencyQuestions": [
-    {
-      "question": "question text",
-      "frequency": <number>,
-      "unit": "unit title"
-    }
-  ]
-}
-
-For highFrequencyQuestions: include ONLY questions with frequency >= 2, sorted by frequency descending. These are the student's must-prepare list.
-For highFrequencyTopics: topics that appear across multiple units or multiple years.
-
-SYLLABUS:
-{{SYLLABUS}}
-
-PREVIOUS YEAR PAPERS:
-{{PAPERS}}`;
+/* prompt moved to api/analyze.ts */
 
 /* ─────────────────────────────────────────────
    COMPONENT
