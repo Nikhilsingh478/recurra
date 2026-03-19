@@ -132,7 +132,7 @@ const Analyze = () => {
       clearInterval(progInterval);
       clearInterval(msgInterval);
       setLoading(false);
-      toast({ description: "Analysis failed. Please check your inputs and try again.", variant: "destructive" });
+      toast({ description: err instanceof Error ? err.message : "Analysis failed. Please try again.", variant: "destructive" });
     }
   };
   return (
