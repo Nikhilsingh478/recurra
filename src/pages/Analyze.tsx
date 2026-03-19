@@ -77,12 +77,6 @@ const Analyze = () => {
 
     setErrSyllabus(false); setErrPapers(false);
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      toast({ description: "API key not configured. Add VITE_GEMINI_API_KEY to .env", variant: "destructive" });
-      return;
-    }
-
     setLoading(true);
     setMsgIndex(0);
     setProgress(0);
@@ -99,35 +93,22 @@ const Analyze = () => {
       }, 250);
     }, 2800);
 
-    const prompt = ANALYSIS_PROMPT
-      .replace("{{SYLLABUS}}", syllabus.trim())
-      .replace("{{PAPERS}}", papers.trim());
-
     try {
-      const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 14000 },
-          }),
-        }
-      );
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          syllabus: syllabus.trim(),
+          papers: papers.trim(),
+        }),
+      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(`API ${res.status}`);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Analysis failed");
 
       clearInterval(progInterval);
       clearInterval(msgInterval);
       setProgress(100);
-
-      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!raw) throw new Error("Empty response");
-
-      const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
-      const result = JSON.parse(clean);
 
       // ── Empty result check ──
       const hasQuestions = result.units?.some((u: any) => u.probableQuestions?.length > 0);
