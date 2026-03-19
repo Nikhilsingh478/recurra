@@ -15,69 +15,7 @@ const LOADING_MESSAGES = [
   "Finalizing your exam strategy...",
 ];
 
-/* ─────────────────────────────────────────────
-   GEMINI PROMPT — updated priority logic
-───────────────────────────────────────────── */
-const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
-
-STRICT RULES FOR QUESTION INCLUSION:
-- Include a question ONLY if it is directly tied to a topic explicitly mentioned in the syllabus
-- Do NOT include questions that are out-of-syllabus even if they appeared in papers
-- Do NOT pad the list — quality over quantity
-- Maximum 8 questions per unit, ideally 4-6
-- Sort questions within each unit from highest frequency to lowest frequency
-
-PRIORITY SYSTEM (apply exactly):
-- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority "LOW"
-- frequency = 2: "HIGH" priority
-- frequency >= 3: "HIGHEST" priority  
-- Unit-level priority: "HIGHEST" if any question has frequency >= 3, "HIGH" if any has frequency = 2, "LOW" otherwise
-
-FREQUENCY COUNTING:
-- Count how many different year papers contain a question about this topic/concept
-- Similar questions about the same concept count as the same question
-- Be conservative — if unsure whether two questions match, count them separately
-
-Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
-
-JSON structure:
-{
-  "subject": "detected subject name",
-  "totalYearsAnalyzed": <number of distinct years found in papers>,
-  "units": [
-    {
-      "unitNumber": 1,
-      "unitTitle": "exact unit title from syllabus",
-      "unitPriority": "HIGHEST" | "HIGH" | "LOW",
-      "probableQuestions": [
-        {
-          "question": "concise question text",
-          "frequency": <number>,
-          "priority": "HIGHEST" | "HIGH" | "LOW"
-        }
-      ],
-      "topTopics": ["topic1", "topic2", "topic3"]
-    }
-  ],
-  "examStrategy": "2-3 sentence focused strategy tip based on the actual patterns found",
-  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
-  "highFrequencyQuestions": [
-    {
-      "question": "question text",
-      "frequency": <number>,
-      "unit": "unit title"
-    }
-  ]
-}
-
-For highFrequencyQuestions: include ONLY questions with frequency >= 2, sorted by frequency descending. These are the student's must-prepare list.
-For highFrequencyTopics: topics that appear across multiple units or multiple years.
-
-SYLLABUS:
-{{SYLLABUS}}
-
-PREVIOUS YEAR PAPERS:
-{{PAPERS}}`;
+/* prompt moved to api/analyze.ts */
 
 /* ─────────────────────────────────────────────
    COMPONENT
@@ -139,12 +77,6 @@ const Analyze = () => {
 
     setErrSyllabus(false); setErrPapers(false);
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      toast({ description: "API key not configured. Add VITE_GEMINI_API_KEY to .env", variant: "destructive" });
-      return;
-    }
-
     setLoading(true);
     setMsgIndex(0);
     setProgress(0);
@@ -161,35 +93,22 @@ const Analyze = () => {
       }, 250);
     }, 2800);
 
-    const prompt = ANALYSIS_PROMPT
-      .replace("{{SYLLABUS}}", syllabus.trim())
-      .replace("{{PAPERS}}", papers.trim());
-
     try {
-      const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 14000 },
-          }),
-        }
-      );
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          syllabus: syllabus.trim(),
+          papers: papers.trim(),
+        }),
+      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(`API ${res.status}`);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Analysis failed");
 
       clearInterval(progInterval);
       clearInterval(msgInterval);
       setProgress(100);
-
-      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!raw) throw new Error("Empty response");
-
-      const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
-      const result = JSON.parse(clean);
 
       // ── Empty result check ──
       const hasQuestions = result.units?.some((u: any) => u.probableQuestions?.length > 0);
@@ -213,7 +132,7 @@ const Analyze = () => {
       clearInterval(progInterval);
       clearInterval(msgInterval);
       setLoading(false);
-      toast({ description: "Analysis failed. Please check your inputs and try again.", variant: "destructive" });
+      toast({ description: err instanceof Error ? err.message : "Analysis failed. Please try again.", variant: "destructive" });
     }
   };
   return (
