@@ -99,22 +99,30 @@ const Index = () => {
         }
 
         /* ── Magnet CTA ── */
-        @keyframes shimmer {
-          0%  { background-position:-200% center; }
-          100%{ background-position:200% center; }
-        }
         .magnet-cta {
           display:inline-flex; align-items:center; justify-content:center;
           height:54px; padding:0 36px; border-radius:999px;
           font-size:0.95rem; font-weight:600;
           color:#050810;
-          background:linear-gradient(108deg,#fff 35%,#dce8ff 50%,#fff 65%);
-          background-size:200% auto;
-          animation:shimmer 3s linear infinite;
+          background:#fff;
           text-decoration:none;
           transition:transform 0.22s ease, box-shadow 0.22s ease;
           will-change:transform; cursor:pointer; border:none;
+          position:relative; overflow:hidden;
         }
+        .magnet-cta::after {
+          content: "";
+          position:absolute; top:0; left:-100%;
+          width:50%; height:100%;
+          background:linear-gradient(90deg, transparent, rgba(220,232,255,0.8), transparent);
+          animation:shimmer 3s infinite linear;
+          transform: skewX(-20deg);
+        }
+        @keyframes shimmer {
+          0%  { transform: skewX(-20deg) translateX(0); }
+          100%{ transform: skewX(-20deg) translateX(400%); }
+        }
+        .magnet-cta span { position:relative; z-index:2; }
         .magnet-cta:hover {
           box-shadow:0 8px 40px rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.4);
         }
@@ -169,7 +177,7 @@ const Index = () => {
         <section className="mx-auto w-full max-w-[900px] px-5 sm:px-10 py-24 sm:py-36">
           <p className="sec-label mb-8">WHY IT EXISTS</p>
           <ScrollReveal
-            baseOpacity={0.07}
+            baseOpacity={0}
             enableBlur
             baseRotation={2}
             blurStrength={5}
@@ -346,7 +354,7 @@ const Index = () => {
             <div style={rs(ctaReveal.visible,180)}>
               <Magnet padding={60} magnetStrength={3}>
                 <Link to="/analyze" className="magnet-cta">
-                  Generate Probables →
+                  <span>Generate Probables →</span>
                 </Link>
               </Magnet>
             </div>
