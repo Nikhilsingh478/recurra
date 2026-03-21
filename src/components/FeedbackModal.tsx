@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { sendFeedback } from "@/utils/sendFeedback";
+import { analytics } from "@/lib/analytics";
 
 /* ── Emoji Rating ── */
 
@@ -194,6 +195,7 @@ const FeedbackModal = () => {
       });
 
       setSent(true);
+      analytics.feedbackSubmitted(rating);
       setTimeout(close, 2200);
     } catch {
       setSending(false);

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import AnalysisLoader from "@/components/AnalysisLoader";
 import { toast } from "@/hooks/use-toast";
+import { analytics } from "@/lib/analytics";
 
 /* ─────────────────────────────────────────────
    LOADING MESSAGES
@@ -67,15 +68,18 @@ const Analyze = () => {
     if (isGarbage(syllabus)) {
       shake("syllabus");
       toast({ description: "Please paste a proper unit-wise syllabus with at least a few units.", variant: "destructive" });
+      analytics.analysisFailed("invalid_syllabus_input");
       return;
     }
     if (isGarbage(papers)) {
       shake("papers");
       toast({ description: "Please paste at least one full question paper.", variant: "destructive" });
+      analytics.analysisFailed("invalid_papers_input");
       return;
     }
 
     setErrSyllabus(false); setErrPapers(false);
+    analytics.analysisStarted();
 
     setLoading(true);
     setMsgIndex(0);
@@ -117,8 +121,14 @@ const Analyze = () => {
         clearInterval(msgInterval);
         setLoading(false);
         toast({ description: "No valid syllabus content found. Please paste a proper unit-wise syllabus.", variant: "destructive" });
+        analytics.analysisFailed("empty_result_from_gemini");
         return;
       }
+      
+      analytics.analysisCompleted(
+        result.subject ?? "Unknown",
+        result.units?.length ?? 0
+      );
 
       localStorage.setItem("recurra_results", JSON.stringify({
         ...result,
@@ -132,6 +142,7 @@ const Analyze = () => {
       clearInterval(progInterval);
       clearInterval(msgInterval);
       setLoading(false);
+      analytics.analysisFailed(err instanceof Error ? err.message : "unknown_error");
       toast({ description: err instanceof Error ? err.message : "Analysis failed. Please try again.", variant: "destructive" });
     }
   };

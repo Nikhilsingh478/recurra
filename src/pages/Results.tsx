@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Copy, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import FeedbackModal from "@/components/FeedbackModal";
+import { analytics } from "@/lib/analytics";
 
 /* ─────────────────────────────────────────────
    TYPES
@@ -504,12 +505,15 @@ const Results = () => {
       L.push("");
     });
     navigator.clipboard.writeText(L.join("\n"));
-    setCopied(true); setTimeout(() => setCopied(false), 2400);
+    setCopied(true);
+    analytics.resultsCopied();
+    setTimeout(() => setCopied(false), 2400);
   }, [data]);
 
   const handleExport = async () => {
     if (!data || exporting) return;
     setExporting(true);
+    analytics.pdfExported();
     await exportPDF(data);
     setExporting(false);
   };
@@ -801,7 +805,7 @@ const Results = () => {
                   <button
                     key={t.key}
                     className={`tab-btn ${activeTab === t.key ? "active" : ""}`}
-                    onClick={() => setActiveTab(t.key)}
+                    onClick={() => { setActiveTab(t.key); analytics.tabSwitched(t.key); }}
                   >
                     {t.label}
                     {t.count != null && t.count > 0 && (
