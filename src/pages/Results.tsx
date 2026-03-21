@@ -618,8 +618,8 @@ const Results = () => {
           background: transparent;
           color: rgba(255,255,255,0.5);
           border-radius: 999px;
-          padding: 9px 20px;
-          font-size: 0.82rem;
+          padding: 10px 22px;
+          font-size: 0.85rem;
           font-weight: 500;
           cursor: pointer;
           transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
@@ -639,8 +639,8 @@ const Results = () => {
           color: #050810;
           border: none;
           border-radius: 999px;
-          padding: 9px 22px;
-          font-size: 0.82rem;
+          padding: 10px 24px;
+          font-size: 0.85rem;
           font-weight: 600;
           cursor: pointer;
           transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
@@ -854,23 +854,25 @@ const Results = () => {
 
         </div>
 
+        {/* ── FLOATING COPY BUTTON ── */}
+        <div className="fixed bottom-[92px] right-5 z-40 sm:right-8">
+          <button 
+            onClick={copyResults}
+            className="group flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[#0a1226]/85 backdrop-blur-xl text-white/70 shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-white/10 hover:text-white"
+            title="Copy Text Format"
+          >
+            {copied ? <Check size={18} strokeWidth={2.5} className="text-[#3b6fd4]" /> : <Copy size={18} />}
+          </button>
+        </div>
+
         {/* ── BOTTOM BAR ── */}
-        <div className="btm-bar fixed bottom-0 left-0 right-0 z-40 flex h-[60px] items-center justify-between px-5 sm:px-8">
+        <div className="btm-bar fixed bottom-0 left-0 right-0 z-40 flex h-[76px] items-center justify-between px-5 sm:px-8">
           <button className="btn-ghost" onClick={() => navigate("/analyze")}>
             ← Analyze Another
           </button>
-          <div className="flex items-center gap-2.5">
-            <button 
-              onClick={copyResults}
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              title="Copy text format"
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-            <button className="btn-white" onClick={handleExport} disabled={exporting}>
-              {exporting ? "Exporting..." : "Export PDF ↓"}
-            </button>
-          </div>
+          <button className="btn-white" onClick={handleExport} disabled={exporting}>
+            {exporting ? "Exporting PDF..." : "Export as PDF ↓"}
+          </button>
         </div>
       </div>
       <FeedbackModal />
