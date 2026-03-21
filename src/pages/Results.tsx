@@ -618,9 +618,10 @@ const Results = () => {
           background: transparent;
           color: rgba(255,255,255,0.5);
           border-radius: 999px;
-          padding: 10px 22px;
-          font-size: 0.85rem;
+          padding: 8px 18px;
+          font-size: 0.72rem;
           font-weight: 500;
+          letter-spacing: 0.01em;
           cursor: pointer;
           transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
           will-change: transform;
@@ -639,9 +640,10 @@ const Results = () => {
           color: #050810;
           border: none;
           border-radius: 999px;
-          padding: 10px 24px;
-          font-size: 0.85rem;
+          padding: 8px 20px;
+          font-size: 0.72rem;
           font-weight: 600;
+          letter-spacing: 0.01em;
           cursor: pointer;
           transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
           will-change: transform;
@@ -855,18 +857,18 @@ const Results = () => {
         </div>
 
         {/* ── FLOATING COPY BUTTON ── */}
-        <div className="fixed bottom-[92px] right-5 z-40 sm:right-8">
+        <div className="fixed bottom-[74px] right-5 z-40 sm:right-8">
           <button 
             onClick={copyResults}
-            className="group flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[#0a1226]/85 backdrop-blur-xl text-white/70 shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-white/10 hover:text-white"
+            className="group flex h-[38px] w-[38px] items-center justify-center rounded-full border border-white/10 bg-[#0a1226]/85 backdrop-blur-xl text-white/70 shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-white/10 hover:text-white"
             title="Copy Text Format"
           >
-            {copied ? <Check size={18} strokeWidth={2.5} className="text-[#3b6fd4]" /> : <Copy size={18} />}
+            {copied ? <Check size={16} strokeWidth={2.5} className="text-[#3b6fd4]" /> : <Copy size={16} />}
           </button>
         </div>
 
         {/* ── BOTTOM BAR ── */}
-        <div className="btm-bar fixed bottom-0 left-0 right-0 z-40 flex h-[76px] items-center justify-between px-5 sm:px-8">
+        <div className="btm-bar fixed bottom-0 left-0 right-0 z-40 flex h-[58px] items-center justify-between px-5 sm:px-8">
           <button className="btn-ghost" onClick={() => navigate("/analyze")}>
             ← Analyze Another
           </button>
