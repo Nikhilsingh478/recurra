@@ -1,8 +1,63 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const rateLimit = new Map<string, number[]>();
-const MAX_REQUESTS = 5;
-const WINDOW_MS = 60 * 60 * 1000;
+const DAILY_LIMIT = 10;
+const rateLimit = new Map<string, { count: number; resetAt: number }>();
+
+const GEMINI_KEYS = [
+  process.env.GEMINI_API_KEY_1 || "",
+  process.env.GEMINI_API_KEY_2 || "",
+  process.env.GEMINI_API_KEY_3 || "",
+].filter(k => k.length > 0);
+
+function getMidnightIST(): number {
+  const now = new Date();
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+  const nowIST = new Date(now.getTime() + IST_OFFSET);
+  const midnightIST = new Date(nowIST);
+  midnightIST.setUTCHours(0, 0, 0, 0);
+  midnightIST.setUTCDate(midnightIST.getUTCDate() + 1);
+  return midnightIST.getTime() - IST_OFFSET;
+}
+
+async function callGemini(prompt: string): Promise<any> {
+  let lastError = "";
+  
+  for (const key of GEMINI_KEYS) {
+    const geminiRes = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": key,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 14000 },
+        }),
+      }
+    );
+    
+    // If this key hit Gemini's rate limit (429) or quota (403),
+    // try the next key
+    if (geminiRes.status === 429 || geminiRes.status === 403) {
+      lastError = `Key exhausted (status ${geminiRes.status})`;
+      continue; // try next key
+    }
+    
+    // If any other error from Gemini (500, 502 etc), don't try other keys
+    if (!geminiRes.ok) {
+      throw new Error(`Gemini service error: ${geminiRes.status}`);
+    }
+    
+    // Success — return the response data
+    const data = await geminiRes.json();
+    return data;
+  }
+  
+  // All keys exhausted
+  throw new Error("ALL_KEYS_EXHAUSTED");
+}
 
 const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
 
@@ -94,16 +149,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     "unknown";
 
   const now = Date.now();
-  const timestamps = (rateLimit.get(ip) || []).filter((t) => now - t < WINDOW_MS);
+  let ipRecord = rateLimit.get(ip);
 
-  if (timestamps.length >= MAX_REQUESTS) {
+  if (!ipRecord || now >= ipRecord.resetAt) {
+    // New day or no record
+    ipRecord = { count: 1, resetAt: getMidnightIST() };
+    rateLimit.set(ip, ipRecord);
+  } else if (ipRecord.count >= DAILY_LIMIT) {
+    // Limit reached
     return res.status(429).json({
-      error: "Rate limit exceeded. You can analyze 5 times per hour. Please try again later.",
+      error: "You've used all 10 analyses for today. Your limit resets at midnight. Come back tomorrow!",
+      resetsAt: new Date(ipRecord.resetAt).toISOString()
     });
+  } else {
+    // Increment count
+    ipRecord.count++;
+    rateLimit.set(ip, ipRecord);
   }
-
-  timestamps.push(now);
-  rateLimit.set(ip, timestamps);
 
   try {
     const { syllabus, papers } = req.body || {};
@@ -119,26 +181,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .replace("{{SYLLABUS}}", syllabus.trim())
       .replace("{{PAPERS}}", papers.trim());
 
-    const geminiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": process.env.GEMINI_API_KEY || "",
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 14000 },
-        }),
+    // Call Gemini with key rotation
+    let data;
+    try {
+      data = await callGemini(prompt);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      if (message === "ALL_KEYS_EXHAUSTED") {
+        return res.status(503).json({ 
+          error: "Recurra is experiencing high demand right now. Please try again in a few minutes." 
+        });
       }
-    );
-
-    if (!geminiRes.ok) {
-      return res.status(502).json({ error: "Analysis service unavailable. Please try again." });
+      return res.status(502).json({ 
+        error: "Analysis service unavailable. Please try again." 
+      });
     }
 
-    const data = await geminiRes.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!raw) {
       return res.status(500).json({ error: "Analysis failed. Please check your inputs and try again." });
