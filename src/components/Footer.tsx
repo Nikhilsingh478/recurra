@@ -23,7 +23,7 @@ const Footer = () => {
 
         .footer-link {
           position: relative;
-          color: rgba(255,255,255,0.38);
+          color: rgba(255,255,255,0.65);
           font-size: 0.84rem;
           text-decoration: none;
           width: fit-content;
@@ -48,9 +48,9 @@ const Footer = () => {
           border-radius: 999px;
           font-size: 0.82rem;
           font-weight: 500;
-          color: rgba(255,255,255,0.6);
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.09);
+          color: rgba(255,255,255,0.85);
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.2);
           text-decoration: none;
           transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
           will-change: transform;
@@ -66,13 +66,11 @@ const Footer = () => {
         .reveal {
           opacity: 0;
           transform: translateY(24px);
-          filter: blur(8px);
           transition:
             opacity .9s cubic-bezier(.22,1,.36,1),
-            transform .9s cubic-bezier(.22,1,.36,1),
-            filter .9s cubic-bezier(.22,1,.36,1);
+            transform .9s cubic-bezier(.22,1,.36,1);
         }
-        .reveal-visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .reveal-visible { opacity: 1; transform: translateY(0); }
       `}</style>
 
       <footer
@@ -93,7 +91,7 @@ const Footer = () => {
               >
                 RECURRA
               </Link>
-              <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.34)", lineHeight: 1.8, maxWidth: 300 }}>
+              <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.8, maxWidth: 300 }}>
                 AI-powered exam pattern intelligence for university students.
                 Predict what matters. Prepare with focus.
               </p>
@@ -101,7 +99,7 @@ const Footer = () => {
 
             {/* Navigation */}
             <div className="reveal">
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.25)", marginBottom: 18 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.7)", marginBottom: 18 }}>
                 Navigation
               </p>
               <div className="flex flex-col gap-3">
@@ -118,10 +116,10 @@ const Footer = () => {
 
             {/* Contact */}
             <div className="reveal">
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.25)", marginBottom: 18 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.7)", marginBottom: 18 }}>
                 Contact
               </p>
-              <p style={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.32)", lineHeight: 1.75, marginBottom: 20, maxWidth: 260 }}>
+              <p style={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.75, marginBottom: 20, maxWidth: 260 }}>
                 Have feedback, suggestions, or found a bug?
                 We'd love to hear from you.
               </p>
@@ -144,10 +142,10 @@ const Footer = () => {
             className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-10 reveal"
             style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
           >
-            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.25)" }}>
+            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)" }}>
               © {new Date().getFullYear()} Recurra. Built for university students.
             </p>
-            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.18)" }}>
+            <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
               Powered by Gemini AI
             </p>
           </div>
