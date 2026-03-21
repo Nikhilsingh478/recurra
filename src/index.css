@@ -386,7 +386,10 @@
   }
 
   .fb-submit-btn {
-    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
     border-radius: 12px;
     background: rgba(255,255,255,0.93);
     color: #050810;
@@ -412,8 +415,10 @@
   }
 
   .fb-skip-btn {
-    height: 42px;
-    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
     border-radius: 12px;
     background: transparent;
     color: rgba(255,255,255,0.35);
