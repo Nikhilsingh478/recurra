@@ -194,207 +194,329 @@ const UnitSection = ({ unit, idx }: { unit: Unit; idx: number }) => {
 };
 
 /* ─────────────────────────────────────────────
-   PDF EXPORT — using jsPDF (loaded dynamically)
+   PDF EXPORT — fixed version
+   Drop this entire function into Results.tsx
+   replacing the existing exportPDF function
 ───────────────────────────────────────────── */
+
 const exportPDF = async (data: RecurraResults) => {
   try {
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-    const W = 210;
-    const margin = 18;
-    const colW = W - margin * 2;
+    const W        = 210;
+    const margin   = 16;           // left/right margin
+    const colW     = W - margin * 2;  // 178mm usable width
+    const freqW    = 10;           // reserved width on right for "2x", "3x"
+    const prefixW  = 8;            // reserved width on left for "[!!] " etc.
+    const textW    = colW - prefixW - freqW - 4; // actual question text width
     let y = margin;
 
-    const checkPage = (needed = 20) => {
-      if (y + needed > 282) { doc.addPage(); y = margin; }
+    /* ── safe page break ── */
+    const checkPage = (needed = 18) => {
+      if (y + needed > 284) {
+        doc.addPage();
+        y = margin;
+      }
     };
 
-    const hLine = (r = 210, g = 215, b = 225, lw = 0.3) => {
+    /* ── thin divider line ── */
+    const hLine = (
+      r = 210, g = 215, b = 225,
+      lw = 0.25,
+      x1 = margin, x2 = W - margin
+    ) => {
       doc.setDrawColor(r, g, b);
       doc.setLineWidth(lw);
-      doc.line(margin, y, W - margin, y);
-      y += 5;
+      doc.line(x1, y, x2, y);
+      y += 4;
     };
 
-    const txt = (text: string, x: number, size: number, r: number, g: number, b: number, bold = false, maxW?: number) => {
+    /* ── set font helper ── */
+    const setFont = (
+      size: number,
+      r: number, g: number, b: number,
+      bold = false
+    ) => {
       doc.setFontSize(size);
       doc.setTextColor(r, g, b);
       doc.setFont("helvetica", bold ? "bold" : "normal");
-      if (maxW) {
-        const lines = doc.splitTextToSize(text, maxW);
-        doc.text(lines, x, y);
-        y += lines.length * size * 0.42 + 1.5;
-        return lines.length;
-      }
-      doc.text(text, x, y);
-      y += size * 0.42 + 1.5;
-      return 1;
     };
 
-    /* ── Header bar ── */
+    /* ─────────────────────────────────────────
+       HEADER BAR — dark branded
+    ───────────────────────────────────────── */
     doc.setFillColor(5, 8, 16);
-    doc.rect(0, 0, W, 38, "F");
-    doc.setFontSize(16); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
-    doc.text("RECURRA", margin, 14);
-    doc.setFontSize(8.5); doc.setTextColor(136,153,170); doc.setFont("helvetica","normal");
-    doc.text("Exam Pattern Analysis", margin, 22);
-    doc.text(`Generated: ${new Date(data.timestamp ?? "").toLocaleString("en-IN")}`, margin, 29);
-    y = 46;
+    doc.rect(0, 0, W, 36, "F");
 
-    /* ── Subject ── */
-    doc.setFontSize(19); doc.setTextColor(10,14,28); doc.setFont("helvetica","bold");
-    doc.text(data.subject ?? "General", margin, y); y += 7;
-    doc.setFontSize(10); doc.setTextColor(90,100,120); doc.setFont("helvetica","normal");
-    doc.text("Exam Probables", margin, y); y += 5;
-    hLine();
+    setFont(15, 255, 255, 255, true);
+    doc.text("RECURRA", margin, 13);
 
-    /* Stats */
-    doc.setFontSize(8.5); doc.setTextColor(110,120,140);
+    setFont(8, 136, 153, 170, false);
+    doc.text("Exam Pattern Analysis", margin, 21);
     doc.text(
-      `${data.totalYearsAnalyzed ?? 0} years analyzed  |  ${data.units?.length ?? 0} units  |  ` +
-      `${data.units?.reduce((a,u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0} questions`,
+      `Generated: ${new Date(data.timestamp ?? "").toLocaleString("en-IN")}`,
+      margin, 28
+    );
+
+    y = 44;
+
+    /* ─────────────────────────────────────────
+       SUBJECT HEADING
+    ───────────────────────────────────────── */
+    setFont(18, 10, 14, 28, true);
+    doc.text(data.subject ?? "General", margin, y);
+    y += 7;
+
+    setFont(10, 90, 100, 120, false);
+    doc.text("Exam Probables", margin, y);
+    y += 5;
+
+    hLine(200, 205, 215, 0.4);
+
+    setFont(8.5, 110, 120, 140, false);
+    doc.text(
+      `${data.totalYearsAnalyzed ?? 0} years analyzed  |  ` +
+      `${data.units?.length ?? 0} units  |  ` +
+      `${data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0} questions`,
       margin, y
     );
-    y += 10;
+    y += 11;
 
-    /* ── Strategy ── */
-    checkPage(30);
-    const stratLines = doc.splitTextToSize(data.examStrategy ?? "", colW - 12);
-    const stratH = stratLines.length * 4.5 + 14;
-    doc.setFillColor(240, 244, 255);
-    doc.roundedRect(margin, y - 4, colW, stratH, 3, 3, "F");
-    doc.setFontSize(7.5); doc.setTextColor(59,111,212); doc.setFont("helvetica","bold");
-    doc.text("EXAM STRATEGY", margin + 5, y + 2); y += 7;
-    doc.setFontSize(9); doc.setTextColor(40,50,70); doc.setFont("helvetica","normal");
-    doc.text(stratLines, margin + 5, y);
-    y += stratLines.length * 4.5 + 9;
+    /* ─────────────────────────────────────────
+       EXAM STRATEGY BOX
+       Fix: measure text height FIRST, then draw box
+    ───────────────────────────────────────── */
+    checkPage(36);
 
-    /* ── High freq topics ── */
+    const stratText  = data.examStrategy ?? "";
+    /* use colW - 12 for text inside box (6mm padding each side) */
+    const stratLines = doc.splitTextToSize(stratText, colW - 12);
+    /* line height for 9pt = ~4.2mm per line */
+    const stratBodyH = stratLines.length * 4.4;
+    /* total box height: 7mm label area + body + 8mm padding */
+    const stratBoxH  = stratBodyH + 17;
+
+    doc.setFillColor(237, 242, 255);
+    doc.roundedRect(margin, y - 3, colW, stratBoxH, 3, 3, "F");
+    doc.setDrawColor(180, 200, 245);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y - 3, colW, stratBoxH, 3, 3, "S");
+
+    setFont(7, 59, 111, 212, true);
+    doc.text("EXAM STRATEGY", margin + 5, y + 3);
+    y += 9;
+
+    setFont(9, 30, 40, 60, false);
+    doc.text(stratLines, margin + 6, y);
+    y += stratBodyH + 8;
+
+    /* ─────────────────────────────────────────
+       HIGH FREQUENCY TOPICS
+    ───────────────────────────────────────── */
     const hfT = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
     if (hfT.length > 0) {
-      checkPage(18);
-      doc.setFontSize(7.5); doc.setTextColor(59,111,212); doc.setFont("helvetica","bold");
-      doc.text("HIGH FREQUENCY TOPICS", margin, y); y += 5;
-      const topicsLines = doc.splitTextToSize(hfT.join("  |  "), colW);
-      doc.setFontSize(9); doc.setTextColor(60,70,90); doc.setFont("helvetica","normal");
+      checkPage(20);
+
+      setFont(7, 59, 111, 212, true);
+      doc.text("HIGH FREQUENCY TOPICS", margin, y);
+      y += 5;
+
+      const topicsStr   = hfT.join("  |  ");
+      const topicsLines = doc.splitTextToSize(topicsStr, colW);
+      setFont(8.5, 50, 60, 80, false);
       doc.text(topicsLines, margin, y);
-      y += topicsLines.length * 4.5 + 8;
+      y += topicsLines.length * 4.2 + 9;
     }
 
-    /* ── Units ── */
+    /* ─────────────────────────────────────────
+       UNITS
+    ───────────────────────────────────────── */
     data.units?.forEach((u) => {
-      checkPage(32);
+      checkPage(30);
 
-      const pKey = (u.unitPriority ?? u.priority ?? "LOW") as PKey;
+      const pKey = (u.unitPriority ?? u.priority ?? "LOW") as string;
+
       const headerBg: Record<string, [number,number,number]> = {
-        HIGHEST:[254,243,199], HIGH:[219,234,254], MEDIUM:[219,234,254], LOW:[245,246,248],
+        HIGHEST: [254, 243, 199],
+        HIGH:    [219, 234, 254],
+        MEDIUM:  [219, 234, 254],
+        LOW:     [243, 244, 246],
       };
-      const labelColor: Record<string, [number,number,number]> = {
-        HIGHEST:[160,100,10], HIGH:[59,111,212], MEDIUM:[59,111,212], LOW:[120,130,150],
+      const labelCol: Record<string, [number,number,number]> = {
+        HIGHEST: [155, 95,  10 ],
+        HIGH:    [59,  111, 212],
+        MEDIUM:  [59,  111, 212],
+        LOW:     [120, 130, 150],
       };
 
-      doc.setFillColor(...(headerBg[pKey] ?? [245,246,248]));
-      doc.roundedRect(margin, y - 3, colW, 15, 2, 2, "F");
+      /* Unit header box — fixed 16mm height */
+      doc.setFillColor(...(headerBg[pKey] ?? [243, 244, 246]));
+      doc.roundedRect(margin, y - 2, colW, 16, 2, 2, "F");
 
-      doc.setFontSize(7.5); doc.setTextColor(...(labelColor[pKey] ?? [120,130,150])); doc.setFont("helvetica","bold");
-      doc.text(`UNIT ${u.unitNumber}`, margin + 4, y + 2);
-      doc.text(pKey, W - margin - 4, y + 2, { align: "right" });
-      doc.setFontSize(10); doc.setTextColor(10,14,28);
-      doc.text(u.unitTitle ?? "", margin + 4, y + 9);
+      /* UNIT N label — left */
+      setFont(7, ...(labelCol[pKey] ?? [120, 130, 150]), true);
+      doc.text(`UNIT ${u.unitNumber}`, margin + 4, y + 3);
+
+      /* Priority label — right */
+      doc.text(pKey, W - margin - 3, y + 3, { align: "right" });
+
+      /* Unit title — left, below label */
+      setFont(10, 10, 14, 28, true);
+      /* truncate long titles to fit */
+      const titleLines = doc.splitTextToSize(u.unitTitle ?? "", colW - 30);
+      doc.text(titleLines[0], margin + 4, y + 11); // only first line in header
       y += 20;
 
-      /* Topics */
+      /* Topics row */
       if (u.topTopics?.length > 0) {
-        const topicsStr = u.topTopics.join("  |  ");
-        const tLines = doc.splitTextToSize(topicsStr, colW);
-        doc.setFontSize(8); doc.setTextColor(130,140,155); doc.setFont("helvetica","normal");
+        const topicsStr   = u.topTopics.join("  |  ");
+        const tLines      = doc.splitTextToSize(topicsStr, colW);
+        setFont(7.5, 130, 140, 155, false);
         doc.text(tLines, margin, y);
-        y += tLines.length * 4 + 4;
+        y += tLines.length * 3.8 + 4;
       }
 
-      /* Questions */
+      /* ── Questions ── */
       u.probableQuestions?.forEach((q) => {
-        checkPage(14);
-        const qpKey = (q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW")) as PKey;
+        checkPage(12);
 
-        /* Priority prefix — no emoji */
-        const prefix = qpKey === "HIGHEST" ? "[!!]" : qpKey === "HIGH" ? "[>]" : "[ ]";
-        const qTextColor: Record<string, [number,number,number]> = {
-          HIGHEST:[15,15,15], HIGH:[40,50,70], MEDIUM:[40,50,70], LOW:[130,140,155],
+        const qpKey  = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+        const prefix = qpKey === "HIGHEST" ? "[!!]"
+                     : qpKey === "HIGH"    ? "[>] "
+                     :                       "[ ] ";
+
+        const qTextCol: Record<string, [number,number,number]> = {
+          HIGHEST: [10,  10,  10 ],
+          HIGH:    [35,  45,  65 ],
+          MEDIUM:  [35,  45,  65 ],
+          LOW:     [140, 148, 160],
         };
-        const qFreqColor: Record<string, [number,number,number]> = {
-          HIGHEST:[160,100,10], HIGH:[59,111,212], MEDIUM:[59,111,212], LOW:[155,165,175],
+        const qFreqCol: Record<string, [number,number,number]> = {
+          HIGHEST: [155, 95,  10 ],
+          HIGH:    [59,  111, 212],
+          MEDIUM:  [59,  111, 212],
+          LOW:     [160, 165, 175],
         };
 
-        /* Render question text with enough width, leaving space for freq on right */
-        const qLines = doc.splitTextToSize(`${prefix}  ${q.question}`, colW - 14);
-        doc.setFontSize(9);
-        doc.setTextColor(...(qTextColor[qpKey] ?? [130,140,155]));
-        doc.setFont("helvetica", qpKey === "HIGHEST" ? "bold" : "normal");
-        doc.text(qLines, margin + 3, y);
+        /*
+          Layout per question row:
+          [prefix]  [question text ................]  [Nx]
+          margin+0  margin+prefixW                    W-margin-freqW
 
-        /* Frequency — right aligned, same y as first question line */
-        doc.setFontSize(8);
-        doc.setTextColor(...(qFreqColor[qpKey] ?? [155,165,175]));
-        doc.text(`${q.frequency}x`, W - margin - 1, y, { align: "right" });
+          textW = colW - prefixW - freqW - 4
+          This guarantees frequency badge never overlaps text
+        */
+        const qLines = doc.splitTextToSize(q.question, textW);
+        const rowH   = qLines.length * 4.4 + 2;
 
-        y += qLines.length * 4.5 + 1.5;
+        checkPage(rowH + 4);
 
-        /* Thin rule */
-        doc.setDrawColor(220,225,232); doc.setLineWidth(0.2);
-        doc.line(margin + 3, y, W - margin - 3, y);
+        /* Prefix */
+        setFont(8.5, ...(qTextCol[qpKey] ?? [140, 148, 160]),
+          qpKey === "HIGHEST");
+        doc.text(prefix, margin, y);
+
+        /* Question text — starts after prefix */
+        doc.text(qLines, margin + prefixW, y);
+
+        /* Frequency badge — right aligned, pinned to first line */
+        setFont(8, ...(qFreqCol[qpKey] ?? [160, 165, 175]), true);
+        doc.text(`${q.frequency}x`, W - margin, y, { align: "right" });
+
+        y += rowH;
+
+        /* thin separator */
+        doc.setDrawColor(220, 224, 230);
+        doc.setLineWidth(0.18);
+        doc.line(margin + prefixW, y, W - margin, y);
         y += 3;
       });
-      y += 5;
+
+      y += 4; // gap after unit
     });
 
-    /* ── Must Prepare ── */
+    /* ─────────────────────────────────────────
+       MUST PREPARE SECTION
+    ───────────────────────────────────────── */
     const hfQ = data.highFrequencyQuestions ??
       (data.units?.flatMap(u =>
         (u.probableQuestions ?? [])
           .filter(q => q.frequency >= 2)
-          .map(q => ({ question: q.question, frequency: q.frequency, unit: u.unitTitle }))
-      ) ?? []).sort((a,b) => b.frequency - a.frequency);
+          .map(q => ({
+            question:  q.question,
+            frequency: q.frequency,
+            unit:      u.unitTitle,
+          }))
+      ) ?? []).sort((a, b) => b.frequency - a.frequency);
 
     if (hfQ.length > 0) {
-      checkPage(22);
-      doc.setFillColor(255,247,225);
-      doc.roundedRect(margin, y - 3, colW, 11, 2, 2, "F");
-      doc.setFontSize(8); doc.setTextColor(160,100,10); doc.setFont("helvetica","bold");
+      checkPage(24);
+
+      /* Section header box */
+      doc.setFillColor(255, 247, 224);
+      doc.setDrawColor(230, 195, 140);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(margin, y - 3, colW, 11, 2, 2, "FD");
+
+      setFont(7.5, 155, 95, 10, true);
       doc.text("MUST PREPARE — HIGH FREQUENCY QUESTIONS", margin + 5, y + 4);
-      y += 15;
+      y += 14;
 
       hfQ.forEach((q) => {
-        checkPage(14);
-        const qLines = doc.splitTextToSize(`[!!]  ${q.question}`, colW - 14);
-        doc.setFontSize(9); doc.setTextColor(15,15,15); doc.setFont("helvetica","bold");
-        doc.text(qLines, margin + 3, y);
-        doc.setFontSize(8); doc.setTextColor(160,100,10);
-        doc.text(`${q.frequency}x`, W - margin - 1, y, { align: "right" });
-        y += qLines.length * 4.5 + 1;
-        doc.setFontSize(7.5); doc.setTextColor(150,160,175); doc.setFont("helvetica","normal");
-        doc.text(q.unit, margin + 3, y);
+        const qLines = doc.splitTextToSize(q.question, textW);
+        const rowH   = qLines.length * 4.4 + 2;
+
+        checkPage(rowH + 10);
+
+        /* [!!] prefix */
+        setFont(8.5, 10, 10, 10, true);
+        doc.text("[!!]", margin, y);
+
+        /* Question text */
+        doc.text(qLines, margin + prefixW, y);
+
+        /* Frequency */
+        setFont(8, 155, 95, 10, true);
+        doc.text(`${q.frequency}x`, W - margin, y, { align: "right" });
+
+        y += rowH;
+
+        /* Unit name below question */
+        setFont(7.5, 150, 158, 170, false);
+        doc.text(q.unit ?? "", margin + prefixW, y);
         y += 5;
-        doc.setDrawColor(240,220,185); doc.setLineWidth(0.2);
-        doc.line(margin + 3, y, W - margin - 3, y);
+
+        /* separator */
+        doc.setDrawColor(235, 210, 170);
+        doc.setLineWidth(0.18);
+        doc.line(margin + prefixW, y, W - margin, y);
         y += 3;
       });
     }
 
-    /* ── Page footer ── */
+    /* ─────────────────────────────────────────
+       FOOTER — on every page
+    ───────────────────────────────────────── */
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(7.5); doc.setTextColor(185,190,200); doc.setFont("helvetica","normal");
-      doc.text("Generated by Recurra", margin, 291);
-      doc.text(`${i} / ${pageCount}`, W - margin, 291, { align: "right" });
+      doc.setDrawColor(210, 215, 220);
+      doc.setLineWidth(0.2);
+      doc.line(margin, 288, W - margin, 288);
+
+      setFont(7, 180, 185, 195, false);
+      doc.text("Generated by Recurra", margin, 292);
+      doc.text(`${i} / ${pageCount}`, W - margin, 292, { align: "right" });
     }
 
-    doc.save(`${(data.subject ?? "recurra").replace(/\s+/g, "_")}_exam_probables.pdf`);
+    doc.save(
+      `${(data.subject ?? "recurra").replace(/\s+/g, "_")}_exam_probables.pdf`
+    );
+
   } catch (err) {
     console.error("PDF export failed:", err);
-    alert("PDF export failed. Run: npm install jspdf");
+    alert("PDF export failed. Make sure jspdf is installed: npm install jspdf");
   }
 };
 
