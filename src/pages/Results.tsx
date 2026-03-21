@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Copy, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import FeedbackModal from "@/components/FeedbackModal";
 
@@ -652,27 +653,7 @@ const Results = () => {
         }
         .btn-white:active { transform: scale(0.97); }
 
-        .btn-export {
-          background: transparent;
-          border: 1px solid rgba(59,111,212,0.28);
-          color: rgba(147,180,248,0.7);
-          border-radius: 999px;
-          padding: 9px 20px;
-          font-size: 0.82rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
-          will-change: transform;
-        }
-        .btn-export:hover {
-          background: rgba(59,111,212,0.12);
-          border-color: rgba(59,111,212,0.45);
-          color: rgba(147,180,248,0.95);
-          transform: translate3d(0,-1px,0);
-          box-shadow: 0 4px 18px rgba(59,111,212,0.15);
-        }
-        .btn-export:active { transform: scale(0.97); }
-        .btn-export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        /* btn-export removed since we are redesigning */
 
         /* ── Ping ── */
         @keyframes cpPing { 75%,100% { transform:scale(2.2); opacity:0; } }
@@ -879,15 +860,15 @@ const Results = () => {
             ← Analyze Another
           </button>
           <div className="flex items-center gap-2.5">
-            <button
-              className="btn-export hidden sm:inline-flex"
-              onClick={handleExport}
-              disabled={exporting}
+            <button 
+              onClick={copyResults}
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              title="Copy text format"
             >
-              {exporting ? "Exporting..." : "Export PDF ↓"}
+              {copied ? <Check size={16} /> : <Copy size={16} />}
             </button>
-            <button className="btn-white" onClick={copyResults}>
-              {copied ? "Copied ✓" : "Copy Results"}
+            <button className="btn-white" onClick={handleExport} disabled={exporting}>
+              {exporting ? "Exporting..." : "Export PDF ↓"}
             </button>
           </div>
         </div>
