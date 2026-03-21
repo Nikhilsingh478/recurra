@@ -27,10 +27,9 @@ const useReveal = (delay = 0) => {
 
 const rs = (visible: boolean, delay = 0): React.CSSProperties => ({
   opacity: visible ? 1 : 0,
-  filter: visible ? "blur(0)" : "blur(8px)",
   transform: visible ? "translate3d(0,0,0)" : "translate3d(0,12px,0)",
-  transition: `opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms, filter 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
-  willChange: "opacity, filter, transform",
+  transition: `opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
+  willChange: "opacity, transform",
 });
 
 /* ════════════════════════════════════════════ */
@@ -131,7 +130,7 @@ const Index = () => {
         /* ── Shared label ── */
         .sec-label {
           font-size:10px; font-weight:700; text-transform:uppercase;
-          letter-spacing:0.2em; color:rgba(255,255,255,0.2);
+          letter-spacing:0.2em; color:rgba(255,255,255,0.6);
         }
       `}</style>
 
@@ -155,7 +154,9 @@ const Index = () => {
               className={`hero-video absolute inset-0 w-full object-cover z-[1]${videoReady ? " hero-video-visible" : ""}`}
               style={{ width:"100%", height:"110%", top:0 }}
               onLoadedData={() => setVideoReady(true)}
-            />
+            >
+              <track kind="captions" />
+            </video>
           )}
           <div className="absolute inset-0 bg-background/50 z-[2]" />
           <div className="relative z-[3] flex flex-col flex-1 min-h-screen">
@@ -200,14 +201,14 @@ const Index = () => {
                 >
                   Three steps.
                   <br />
-                  <span style={{ color:"rgba(255,255,255,0.28)" }}>That's all it takes.</span>
+                  <span style={{ color:"rgba(255,255,255,0.65)" }}>That's all it takes.</span>
                 </h2>
               </div>
               <p
                 style={{
                   ...rs(procReveal.visible, 80),
                   fontSize: "0.88rem",
-                  color: "rgba(255,255,255,0.35)",
+                  color: "rgba(255,255,255,0.65)",
                   lineHeight: 1.75,
                   maxWidth: 260,
                   paddingBottom: 4,
@@ -227,21 +228,21 @@ const Index = () => {
               <ScrollStackItem className="sc-01">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(255,255,255,0.22)", marginBottom:18 }}>
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(255,255,255,0.6)", marginBottom:18 }}>
                       01 — Input
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Paste Your Syllabus
                       <br />&amp; Previous Papers
                     </h3>
-                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.42)", lineHeight:1.75, maxWidth:460 }}>
+                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.7)", lineHeight:1.75, maxWidth:460 }}>
                       Raw text. No formatting required. Recurra handles the rest.
                       The more years of papers you add, the sharper the predictions.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
                     {["Syllabus","Question Papers"].map(t => (
-                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(255,255,255,0.32)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)" }}>{t}</span>
+                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(255,255,255,0.65)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -250,21 +251,21 @@ const Index = () => {
               <ScrollStackItem className="sc-02">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(59,111,212,0.55)", marginBottom:18 }}>
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(147,180,248,0.85)", marginBottom:18 }}>
                       02 — Analyze
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Gemini AI Maps
                       <br />Every Pattern
                     </h3>
-                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.42)", lineHeight:1.75, maxWidth:460 }}>
+                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.7)", lineHeight:1.75, maxWidth:460 }}>
                       Frequency counting. Syllabus filtering. Priority ranking.
                       All in under 20 seconds — not a generic dump, a structured analysis.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
                     {["Frequency counted","Syllabus filtered","Priority ranked"].map(t => (
-                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(147,180,248,0.55)", background:"rgba(59,111,212,0.07)", border:"1px solid rgba(59,111,212,0.16)" }}>{t}</span>
+                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(180,205,250,0.9)", background:"rgba(59,111,212,0.07)", border:"1px solid rgba(59,111,212,0.16)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -273,21 +274,21 @@ const Index = () => {
               <ScrollStackItem className="sc-03">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(245,158,11,0.45)", marginBottom:18 }}>
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(251,191,36,0.85)", marginBottom:18 }}>
                       03 — Prepare
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Unit-wise Probables.
                       <br />Only What Matters.
                     </h3>
-                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.42)", lineHeight:1.75, maxWidth:460 }}>
+                    <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.7)", lineHeight:1.75, maxWidth:460 }}>
                       Results organized by unit, ranked by frequency.
                       The must-prepare list is your shortest path to exam day confidence.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
                     {["Unit-wise","Strategy","Must Prepare List"].map(t => (
-                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(251,191,36,0.55)", background:"rgba(245,158,11,0.06)", border:"1px solid rgba(245,158,11,0.14)" }}>{t}</span>
+                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(253,212,100,0.9)", background:"rgba(245,158,11,0.06)", border:"1px solid rgba(245,158,11,0.14)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -318,7 +319,7 @@ const Index = () => {
                   transition:`opacity 0.7s ease ${i * 110}ms`,
                 }}>{s.num}</p>
                 <p style={{
-                  fontSize:"0.8rem", color:"rgba(255,255,255,0.32)",
+                  fontSize:"0.8rem", color:"rgba(255,255,255,0.65)",
                   opacity: statsReveal.visible ? 1 : 0,
                   transition:`opacity 0.7s ease ${i * 110 + 90}ms`,
                 }}>{s.label}</p>
@@ -330,15 +331,15 @@ const Index = () => {
         {/* ─────── CTA ─────── */}
         <section className="mx-auto w-full max-w-[700px] px-5 sm:px-10 py-16 sm:py-24 text-center">
           <div ref={ctaReveal.ref}>
-            <p style={{ ...rs(ctaReveal.visible,0), fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.2em", color:"rgba(255,255,255,0.18)", marginBottom:20 }}>
+            <p style={{ ...rs(ctaReveal.visible,0), fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.2em", color:"rgba(255,255,255,0.6)", marginBottom:20 }}>
               READY
             </p>
             <h2 style={{ ...rs(ctaReveal.visible,60), fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.8rem,5vw,3rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:16, letterSpacing:"-0.01em" }}>
               Stop guessing.
               <br />
-              <span style={{ color:"rgba(255,255,255,0.3)" }}>Start predicting.</span>
+              <span style={{ color:"rgba(255,255,255,0.65)" }}>Start predicting.</span>
             </h2>
-            <p style={{ ...rs(ctaReveal.visible,120), fontSize:"0.92rem", color:"rgba(255,255,255,0.38)", lineHeight:1.75, maxWidth:380, margin:"0 auto 36px" }}>
+            <p style={{ ...rs(ctaReveal.visible,120), fontSize:"0.92rem", color:"rgba(255,255,255,0.65)", lineHeight:1.75, maxWidth:380, margin:"0 auto 36px" }}>
               Paste your syllabus and previous year papers.
               <br />Recurra does the rest in under 20 seconds.
             </p>
