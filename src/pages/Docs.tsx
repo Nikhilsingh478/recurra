@@ -59,6 +59,11 @@ const Docs = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Documentation — How to Use Recurra for Exam Preparation</title>
+        <meta name="description" content="Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions." />
+        <link rel="canonical" href="https://recurraio.vercel.app/docs" />
+      </Helmet>
       <style>{`
         @keyframes blurReveal {
           from { opacity:0; filter:blur(10px); transform:translate3d(0,14px,0); }

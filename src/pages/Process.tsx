@@ -116,6 +116,11 @@ const Process = () => {
 
   return (
     <div ref={ref} className="relative min-h-screen" style={{ background: "radial-gradient(ellipse 65% 45% at 10% 5%, rgba(28,55,130,0.16) 0%, transparent 62%), radial-gradient(ellipse 50% 40% at 90% 95%, rgba(15,35,95,0.12) 0%, transparent 62%), #050810" }}>
+      <Helmet>
+        <title>How Recurra Works — 3 Steps to Exam Probables | Recurra</title>
+        <meta name="description" content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds." />
+        <link rel="canonical" href="https://recurraio.vercel.app/process" />
+      </Helmet>
 
       <style>{`
         @keyframes blurReveal {

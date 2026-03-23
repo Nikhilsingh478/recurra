@@ -149,6 +149,11 @@ const Analyze = () => {
   };
   return (
     <>
+      <Helmet>
+        <title>Analyze Exam Papers — Generate Probable Questions | Recurra</title>
+        <meta name="description" content="Paste your university syllabus and previous year question papers. Recurra's AI analyzes patterns, counts frequencies, and generates your ranked exam probable questions instantly." />
+        <link rel="canonical" href="https://recurraio.vercel.app/analyze" />
+      </Helmet>
       {/* ── Styles ── */}
       <style>{`
         /* GPU-composited blur reveal — no jitter */

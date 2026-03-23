@@ -13,6 +13,10 @@ const NotFound = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Page Not Found | Recurra</title>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <style>{`
         .magnet-cta {
           display:inline-flex; align-items:center; justify-content:center;
