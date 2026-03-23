@@ -80,8 +80,8 @@ const FEATURES = [
   { icon: "repeat", title: "Pattern Recognition",  desc: "Tracks which questions repeat across years and how often. Frequency = probability." },
   { icon: "layers", title: "Unit-wise Analysis",   desc: "Results organized by unit so you know exactly which parts of the syllabus matter most." },
   { icon: "flame",  title: "Priority Ranking",     desc: "HIGHEST, HIGH, and LOW priority labels on every question based on how many times it appeared." },
-  { icon: "target", title: "Must Prepare List",    desc: "A distilled list of only recurring questions — your shortest path to exam readiness." },
-  { icon: "bulb",   title: "Exam Strategy",        desc: "AI-generated strategy based on actual patterns found in your papers — not generic advice." },
+  { icon: "target", title: "Must Prepare List",    desc: "A distilled list of only recurring questions, your shortest path to exam readiness." },
+  { icon: "bulb",   title: "Exam Strategy",        desc: "AI-generated strategy based on actual patterns found in your papers, not generic advice." },
 ];
 
 const CMP = [
@@ -100,9 +100,45 @@ const Features = () => {
   return (
     <>
       <Helmet>
-        <title>Features — AI Exam Pattern Analysis for University Students | Recurra</title>
-        <meta name="description" content="Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation." />
+        <title>Features: AI Exam Pattern Analysis for University Students | Recurra</title>
+        <meta
+          name="description"
+          content="Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation."
+        />
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://recurraio.vercel.app/features" />
+
+        <meta property="og:title" content="Features: AI Exam Pattern Analysis for University Students | Recurra" />
+        <meta
+          property="og:description"
+          content="Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation."
+        />
+        <meta property="og:url" content="https://recurraio.vercel.app/features" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Recurra" />
+        <meta property="og:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Features: AI Exam Pattern Analysis for University Students | Recurra" />
+        <meta
+          name="twitter:description"
+          content="Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation."
+        />
+        <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Features: AI Exam Pattern Analysis for University Students | Recurra",
+              url: "https://recurraio.vercel.app/features",
+              description:
+                "Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation.",
+            }),
+          }}
+        />
       </Helmet>
       <style>{`
         @keyframes blurReveal {
@@ -212,7 +248,7 @@ const Features = () => {
                 maxWidth: 580,
               }}
             >
-              Every feature in Recurra exists for one reason — to help you find
+              Every feature in Recurra exists for one reason, to help you find
               the highest-value questions before your exam.
             </p>
           </section>
@@ -262,12 +298,12 @@ const Features = () => {
                   no frequency data, and no filter for what's actually in your syllabus.
                 </p>
                 <p data-reveal style={{ ...rv(0.28), color:"rgba(255,255,255,0.4)", fontSize:"clamp(0.88rem,1.6vw,0.98rem)", lineHeight:1.78 }}>
-                  Recurra is built around one principle — focused, high-value output.
+                  Recurra is built around one principle, focused, high-value output.
                   The fewer questions you need to know, the better your preparation.
                 </p>
               </div>
 
-              {/* Right — comparison */}
+              {/* Right: comparison */}
               <div className="lg:col-span-2" data-reveal style={rv(0.2)}>
                 <div className="docs-card" style={{ padding:"22px 24px" }}>
                   <div
@@ -368,7 +404,7 @@ const Features = () => {
                 </h2>
                 <p data-reveal style={{ ...rv(0.2), color:"rgba(255,255,255,0.42)", fontSize:"clamp(0.88rem,1.6vw,0.98rem)", lineHeight:1.78, marginBottom:14 }}>
                   Recurra doesn't just send your papers to an AI and hope for
-                  the best. The prompt is engineered with strict rules —
+                  the best. The prompt is engineered with strict rules,
                   frequency counting, syllabus filtering, priority ranking,
                   and a hard cap on output volume.
                 </p>

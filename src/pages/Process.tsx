@@ -83,7 +83,7 @@ const SL = ({ children }: { children: string }) => (
   </p>
 );
 
-const syllabusText = `Unit 1 — Data Structures\nStack, Queue, Linked List, Trees\n\nUnit 2 — Algorithms\nSorting, Searching, Complexity\n\nUnit 3 — Operating Systems\nProcess Management, Memory...`;
+const syllabusText = `Unit 1: Data Structures\nStack, Queue, Linked List, Trees\n\nUnit 2: Algorithms\nSorting, Searching, Complexity\n\nUnit 3: Operating Systems\nProcess Management, Memory...`;
 
 const Process = () => {
   const ref = useBlurReveal();
@@ -117,9 +117,45 @@ const Process = () => {
   return (
     <div ref={ref} className="relative min-h-screen" style={{ background: "radial-gradient(ellipse 65% 45% at 10% 5%, rgba(28,55,130,0.16) 0%, transparent 62%), radial-gradient(ellipse 50% 40% at 90% 95%, rgba(15,35,95,0.12) 0%, transparent 62%), #050810" }}>
       <Helmet>
-        <title>How Recurra Works — 3 Steps to Exam Probables | Recurra</title>
-        <meta name="description" content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds." />
+        <title>How Recurra Works: 3 Steps to Exam Probables | Recurra</title>
+        <meta
+          name="description"
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+        />
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://recurraio.vercel.app/process" />
+
+        <meta property="og:title" content="How Recurra Works: 3 Steps to Exam Probables | Recurra" />
+        <meta
+          property="og:description"
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+        />
+        <meta property="og:url" content="https://recurraio.vercel.app/process" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Recurra" />
+        <meta property="og:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="How Recurra Works: 3 Steps to Exam Probables | Recurra" />
+        <meta
+          name="twitter:description"
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+        />
+        <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "How Recurra Works: 3 Steps to Exam Probables | Recurra",
+              url: "https://recurraio.vercel.app/process",
+              description:
+                "Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds.",
+            }),
+          }}
+        />
       </Helmet>
 
       <style>{`
@@ -185,7 +221,7 @@ const Process = () => {
       <Navbar />
 
       {/* ═══════════════════════════════════════
-          HERO — clean editorial, no decoration
+          HERO: clean editorial, no decoration
       ═══════════════════════════════════════ */}
       <section className="mx-auto max-w-[860px] px-5 sm:px-8 pt-24 sm:pt-32 pb-20 sm:pb-28">
 
@@ -207,7 +243,7 @@ const Process = () => {
           </span>
         </div>
 
-        {/* Heading — two-tone, large, editorial */}
+        {/* Heading: two-tone, large, editorial */}
         <h1
           data-reveal
           style={{
@@ -254,7 +290,7 @@ const Process = () => {
       </section>
 
       {/* ═══════════════════════════════════════
-          SECTION 2 — THREE STEPS
+          SECTION 2: THREE STEPS
       ═══════════════════════════════════════ */}
       <section className="relative py-4 sm:py-8">
         {/* Timeline vertical line */}
@@ -274,7 +310,7 @@ const Process = () => {
               </h2>
               <p style={{ color: "rgba(255,255,255,0.48)", fontSize: "0.92rem", lineHeight: 1.82, maxWidth: 380, marginBottom: 18 }}>
                 Recurra uses your syllabus as the master filter. Every question
-                from the papers is checked against it — if it's not a direct
+                from the papers is checked against it, if it's not a direct
                 topic from your syllabus, it doesn't make the cut.
               </p>
               <span className="inline-flex items-center rounded-full px-3 py-1" style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", fontSize: 11, color: "rgba(255,255,255,0.32)" }}>
@@ -282,7 +318,7 @@ const Process = () => {
               </span>
             </div>
 
-            {/* Right — typewriter mockup */}
+            {/* Right: typewriter mockup */}
             <div data-reveal style={rv(0.2)} className="proc-card">
               <div className="flex items-center justify-between mb-3">
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontWeight: 500 }}>Your Syllabus</span>
@@ -348,7 +384,7 @@ const Process = () => {
               </span>
             </div>
 
-            {/* Right — stacked paper cards */}
+            {/* Right: stacked paper cards */}
             <div data-reveal style={{ ...rv(0.2), minHeight: 210 }} className="relative group">              {[2, 1, 0].map((i) => (
               <div
                 key={i}
@@ -431,7 +467,7 @@ const Process = () => {
               </span>
             </div>
 
-            {/* Right — results preview */}
+            {/* Right: results preview */}
             <div ref={s3Ref} data-reveal style={rv(0.2)} className="proc-card">
               {/* Header */}
               <div
@@ -443,7 +479,7 @@ const Process = () => {
                 }}
               >
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginBottom: 10 }}>
-                  Human Computer Interaction — Probables
+                  Human Computer Interaction: Probables
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   <span className="rounded-full px-2.5 py-0.5" style={{ fontSize: 10, background: "rgba(59,111,212,0.1)", border: "1px solid rgba(59,111,212,0.22)", color: "#93b4f8" }}>5 units</span>
@@ -508,7 +544,7 @@ const Process = () => {
       </section>
 
       {/* ═══════════════════════════════════════
-          SECTION 3 — AI ENGINE
+          SECTION 3: AI ENGINE
       ═══════════════════════════════════════ */}
       <section className="py-20 sm:py-32 px-5">
         <div className="mx-auto max-w-[860px] grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
@@ -523,7 +559,7 @@ const Process = () => {
               filters, rank by priority, and cap output volume.
             </p>
             <p data-reveal style={{ ...rv(0.24), color: "rgba(255,255,255,0.42)", fontSize: "0.9rem", lineHeight: 1.8, marginBottom: 24 }}>
-              The result is disciplined, structured, exam-specific analysis —
+              The result is disciplined, structured, exam-specific analysis,
               not a generic question dump.
             </p>
             {[
@@ -573,7 +609,7 @@ const Process = () => {
       </section>
 
       {/* ═══════════════════════════════════════
-          SECTION 4 — TIMELINE
+          SECTION 4: TIMELINE
           Desktop: horizontal | Mobile: vertical
       ═══════════════════════════════════════ */}
       <section className="py-20 sm:py-32 px-5">
@@ -622,7 +658,7 @@ const Process = () => {
       </section>
 
       {/* ═══════════════════════════════════════
-          SECTION 5 — CTA
+          SECTION 5: CTA
       ═══════════════════════════════════════ */}
       <section className="py-20 sm:py-32 px-5">
         <div className="mx-auto max-w-[560px] text-center">

@@ -60,9 +60,46 @@ const Docs = () => {
   return (
     <>
       <Helmet>
-        <title>Documentation — How to Use Recurra for Exam Preparation</title>
-        <meta name="description" content="Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions." />
+        <title>Documentation: How to Use Recurra for Exam Preparation</title>
+        <meta
+          name="description"
+          content="Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions."
+        />
         <link rel="canonical" href="https://recurraio.vercel.app/docs" />
+
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="Documentation: How to Use Recurra for Exam Preparation" />
+        <meta
+          property="og:description"
+          content="Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions."
+        />
+        <meta property="og:url" content="https://recurraio.vercel.app/docs" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Recurra" />
+        <meta property="og:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Documentation: How to Use Recurra for Exam Preparation" />
+        <meta
+          name="twitter:description"
+          content="Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions."
+        />
+        <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Documentation: How to Use Recurra for Exam Preparation",
+              url: "https://recurraio.vercel.app/docs",
+              description:
+                "Complete guide to using Recurra. Learn how to paste your syllabus and previous year papers to get the most accurate high-probability exam question predictions.",
+            }),
+          }}
+        />
       </Helmet>
       <style>{`
         @keyframes blurReveal {
@@ -284,7 +321,7 @@ const Docs = () => {
                 <p style={{ color:"rgba(255,255,255,0.42)", fontSize:"0.875rem", lineHeight:1.72, marginBottom:14 }}>
                   Structure your syllabus by units for best results.
                 </p>
-                <div className="docs-code-block">{`Unit 1 — Data Structures\nStack, Queue, Linked List...\n\nUnit 2 — Algorithms\nSorting, Searching...`}</div>
+                <div className="docs-code-block">{`Unit 1: Data Structures\nStack, Queue, Linked List...\n\nUnit 2: Algorithms\nSorting, Searching...`}</div>
                 <p style={{ color:"rgba(255,255,255,0.3)", fontSize:"0.8rem", lineHeight:1.6, marginTop:14 }}>
                   <span style={{ color:"#3b6fd4" }}>Tip:</span> Label each unit clearly. Recurra maps questions to units.
                 </p>
@@ -314,9 +351,9 @@ const Docs = () => {
             <div>
               {[
                 { dot:"#f59e0b", title:"HIGHEST Priority Questions", desc:"Questions that appeared 3 or more times across different years. These are your absolute must-prepares. Don't go into the exam without knowing these." },
-                { dot:"#3b6fd4", title:"HIGH Priority Questions",    desc:"Questions that appeared exactly twice. Strong pattern — high chance of appearing again. Prepare these after your HIGHEST items." },
+                { dot:"#3b6fd4", title:"HIGH Priority Questions",    desc:"Questions that appeared exactly twice. Strong pattern, high chance of appearing again. Prepare these after your HIGHEST items." },
                 { dot:"rgba(255,255,255,0.22)", title:"LOW Priority Questions", desc:"Questions that appeared once but are direct topics from your syllabus. Worth knowing but not your primary focus." },
-                { dot:"#f59e0b", title:"Must Prepare List",          desc:"A distilled list of only the recurring questions across all units. This is your revision cheat-sheet — the shortest path to exam readiness." },
+                { dot:"#f59e0b", title:"Must Prepare List",          desc:"A distilled list of only the recurring questions across all units. This is your revision cheat-sheet, the shortest path to exam readiness." },
               ].map((row, i) => (
                 <div key={i} data-reveal style={rv(0.08 + i * 0.07)} className="docs-result-row group">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" style={{ background: row.dot }} />
@@ -336,8 +373,8 @@ const Docs = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { title:"Add More Years",          desc:"Three or more years of papers dramatically improves pattern accuracy. Two years is the minimum; five is ideal." },
-                { title:"Structure Your Syllabus", desc:"Label units clearly with headings like 'Unit 1 —' so Recurra can map questions accurately." },
-                { title:"Paste Raw Text",          desc:"Don't clean up the papers — paste them as-is, including question numbers, marks, and instructions. Recurra filters what it needs." },
+                { title:"Structure Your Syllabus", desc:"Label units clearly with headings like 'Unit 1:' so Recurra can map questions accurately." },
+                { title:"Paste Raw Text",          desc:"Don't clean up the papers, paste them as-is, including question numbers, marks, and instructions. Recurra filters what it needs." },
                 { title:"Start With Must Prepare", desc:"After analysis, go directly to the Must Prepare tab first. These are your highest ROI questions." },
               ].map((tip, i) => (
                 <div key={i} data-reveal style={rv(0.08 + i * 0.07)} className="docs-card docs-card-hover">

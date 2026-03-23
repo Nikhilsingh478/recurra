@@ -76,7 +76,7 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Recurra — Find Repeating Questions in Your University Exam Papers</title>
+        <title>Recurra: Find Repeating Questions in Your University Exam Papers</title>
         <meta name="description" content="Recurra analyzes your university syllabus and previous year papers using AI to find which questions repeat most. Get unit-wise high-probability exam questions in under 30 seconds. Free for students." />
         <link rel="canonical" href="https://recurraio.vercel.app/" />
       </Helmet>
@@ -84,18 +84,18 @@ const Index = () => {
         .hero-video { opacity:0; transition:opacity 0.8s ease; }
         .hero-video-visible { opacity:1; }
 
-        /* ── Stack card themes ── */
+        /* ── Stack card themes (single accent color) ── */
         .sc-01 {
-          background: rgba(12,15,28,0.97);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(8,16,40,0.97);
+          border: 1px solid rgba(59,111,212,0.18);
         }
         .sc-02 {
           background: rgba(8,16,40,0.97);
           border: 1px solid rgba(59,111,212,0.18);
         }
         .sc-03 {
-          background: rgba(15,12,6,0.97);
-          border: 1px solid rgba(245,158,11,0.14);
+          background: rgba(8,16,40,0.97);
+          border: 1px solid rgba(59,111,212,0.18);
         }
 
         /* ── Stat col dividers ── */
@@ -242,8 +242,8 @@ const Index = () => {
               <ScrollStackItem className="sc-01">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(255,255,255,0.6)", marginBottom:18 }}>
-                      01 — Input
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(147,180,248,0.85)", marginBottom:18 }}>
+                      01: Input
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Paste Your Syllabus
@@ -256,7 +256,7 @@ const Index = () => {
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
                     {["Syllabus","Question Papers"].map(t => (
-                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(255,255,255,0.65)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)" }}>{t}</span>
+                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(180,205,250,0.9)", background:"rgba(59,111,212,0.07)", border:"1px solid rgba(59,111,212,0.16)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -266,7 +266,7 @@ const Index = () => {
                 <div className="flex flex-col h-full justify-between">
                   <div>
                     <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(147,180,248,0.85)", marginBottom:18 }}>
-                      02 — Analyze
+                      02: Analyze
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Gemini AI Maps
@@ -274,7 +274,7 @@ const Index = () => {
                     </h3>
                     <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.7)", lineHeight:1.75, maxWidth:460 }}>
                       Frequency counting. Syllabus filtering. Priority ranking.
-                      All in under 20 seconds — not a generic dump, a structured analysis.
+                      All in under 20 seconds, not a generic dump, a structured analysis.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
@@ -288,8 +288,8 @@ const Index = () => {
               <ScrollStackItem className="sc-03">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(251,191,36,0.85)", marginBottom:18 }}>
-                      03 — Prepare
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.22em", color:"rgba(147,180,248,0.85)", marginBottom:18 }}>
+                      03: Prepare
                     </p>
                     <h3 style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:"clamp(1.4rem,3vw,2rem)", color:"rgba(255,255,255,0.9)", lineHeight:1.18, marginBottom:12 }}>
                       Unit-wise Probables.
@@ -302,7 +302,7 @@ const Index = () => {
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
                     {["Unit-wise","Strategy","Must Prepare List"].map(t => (
-                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(253,212,100,0.9)", background:"rgba(245,158,11,0.06)", border:"1px solid rgba(245,158,11,0.14)" }}>{t}</span>
+                      <span key={t} className="rounded-full" style={{ padding:"4px 12px", fontSize:11, color:"rgba(180,205,250,0.9)", background:"rgba(59,111,212,0.07)", border:"1px solid rgba(59,111,212,0.16)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -442,7 +442,7 @@ const Index = () => {
                   papers as plain text. Gemini AI then maps every question to
                   its syllabus unit, counts its frequency across exam years,
                   and ranks it by priority. The result is a structured,
-                  syllabus-filtered list of probable exam questions — not a
+                  syllabus-filtered list of probable exam questions, not a
                   generic dump, but a focused preparation guide that helps
                   students study smarter before their university exams.
                 </p>
