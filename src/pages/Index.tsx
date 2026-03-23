@@ -75,6 +75,11 @@ const Index = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Recurra — Find Repeating Questions in Your University Exam Papers</title>
+        <meta name="description" content="Recurra analyzes your university syllabus and previous year papers using AI to find which questions repeat most. Get unit-wise high-probability exam questions in under 30 seconds. Free for students." />
+        <link rel="canonical" href="https://recurraio.vercel.app/" />
+      </Helmet>
       <style>{`
         .hero-video { opacity:0; transition:opacity 0.8s ease; }
         .hero-video-visible { opacity:1; }
