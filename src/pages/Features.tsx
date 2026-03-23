@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 
@@ -98,6 +99,11 @@ const Features = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Features — AI Exam Pattern Analysis for University Students | Recurra</title>
+        <meta name="description" content="Recurra offers syllabus filtering, frequency-based question ranking, unit-wise analysis, must-prepare lists, exam strategy, and PDF export. Built for university exam preparation." />
+        <link rel="canonical" href="https://recurraio.vercel.app/features" />
+      </Helmet>
       <style>{`
         @keyframes blurReveal {
           from { opacity:0; filter:blur(10px); transform:translate3d(0,14px,0); }

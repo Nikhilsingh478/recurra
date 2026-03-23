@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { Copy, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -545,6 +546,11 @@ const Results = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Your Exam Probables — Unit-wise Results | Recurra</title>
+        <meta name="description" content="View your AI-generated exam probable questions organized by unit, ranked by frequency. Export as PDF or copy your must-prepare list." />
+        <link rel="canonical" href="https://recurraio.vercel.app/results" />
+      </Helmet>
       <style>{`
         .res-bg {
           background:

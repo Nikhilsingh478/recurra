@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import Magnet from "@/components/Magnet";
 import Navbar from "@/components/Navbar";
 
@@ -12,6 +13,10 @@ const NotFound = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Page Not Found | Recurra</title>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <style>{`
         .magnet-cta {
           display:inline-flex; align-items:center; justify-content:center;

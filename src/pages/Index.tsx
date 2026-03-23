@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -74,6 +75,11 @@ const Index = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Recurra — Find Repeating Questions in Your University Exam Papers</title>
+        <meta name="description" content="Recurra analyzes your university syllabus and previous year papers using AI to find which questions repeat most. Get unit-wise high-probability exam questions in under 30 seconds. Free for students." />
+        <link rel="canonical" href="https://recurraio.vercel.app/" />
+      </Helmet>
       <style>{`
         .hero-video { opacity:0; transition:opacity 0.8s ease; }
         .hero-video-visible { opacity:1; }
@@ -357,6 +363,90 @@ const Index = () => {
                   <span>Generate Probables →</span>
                 </Link>
               </Magnet>
+            </div>
+          </div>
+        </section>
+
+        {/* ─────── SEO TEXT SECTION ─────── */}
+        <section
+          style={{
+            background: "rgba(255,255,255,0.012)",
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+          }}
+        >
+          <div className="mx-auto max-w-[900px] px-5 sm:px-10 py-14 sm:py-16">
+            <p
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.2em",
+                color: "rgba(255,255,255,0.2)",
+                marginBottom: 20,
+              }}
+            >
+              About Recurra
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div>
+                <h2
+                  style={{
+                    fontFamily: "Syne, sans-serif",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    marginBottom: 10,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  AI-Powered Exam Pattern Analysis for University Students
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "rgba(255,255,255,0.25)",
+                    lineHeight: 1.8,
+                  }}
+                >
+                  Recurra is a free AI tool that helps university students
+                  identify which questions are most likely to appear in their
+                  upcoming exams. By analyzing previous year question papers
+                  against your subject syllabus, Recurra finds patterns, counts
+                  how often each question or topic repeats, and generates a
+                  ranked list of high-probability exam questions organized
+                  unit-wise.
+                </p>
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontFamily: "Syne, sans-serif",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    marginBottom: 10,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Previous Year Paper Analysis in Under 30 Seconds
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "rgba(255,255,255,0.25)",
+                    lineHeight: 1.8,
+                  }}
+                >
+                  Students using Recurra paste their syllabus and previous year
+                  papers as plain text. Gemini AI then maps every question to
+                  its syllabus unit, counts its frequency across exam years,
+                  and ranks it by priority. The result is a structured,
+                  syllabus-filtered list of probable exam questions — not a
+                  generic dump, but a focused preparation guide that helps
+                  students study smarter before their university exams.
+                </p>
+              </div>
             </div>
           </div>
         </section>
