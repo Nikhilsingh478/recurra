@@ -69,16 +69,27 @@ STRICT RULES FOR QUESTION INCLUSION:
 - Sort questions within each unit from highest frequency to lowest frequency
 - Rank the units not by words, rank the units by numbers
 
-PRIORITY SYSTEM (apply exactly):
-- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority 3
-- frequency = 2: Priority 2
-- frequency >= 3: Priority 1  
-- Unit-level priority: 1 if any question has frequency >= 3, 2 if any has frequency = 2, 3 otherwise
-
 FREQUENCY COUNTING:
 - Count how many different year papers contain a question about this topic/concept
 - Similar questions about the same concept count as the same question
 - Be conservative — if unsure whether two questions match, count them separately
+
+PRIORITY SYSTEM (dynamic — never use fixed thresholds):
+- First, collect ALL question frequencies across every unit in the entire dataset
+- Identify the highest (max) and lowest (min) frequency values present
+- Then assign priorities relatively based on the actual spread in THIS dataset:
+  - Priority 1: Questions at the TOP of the frequency range (most repeated in this dataset)
+  - Priority 2: Questions in the MIDDLE of the frequency range
+  - Priority 3: Questions at the BOTTOM of the frequency range (least repeated)
+- Concrete examples of how to split the range:
+  - All frequencies = 1 (only one paper): everything is Priority 3, no P1 or P2
+  - Max = 2: frequency 2 → P1, frequency 1 → P3 (skip P2 if no mid values exist)
+  - Max = 3: frequency 3 → P1, frequency 2 → P2, frequency 1 → P3
+  - Max = 4: frequency 4 → P1, frequency 2-3 → P2, frequency 1 → P3
+  - Max = 5: frequency 5 → P1, frequency 3-4 → P2, frequency 1-2 → P3
+  - Max = 6: frequency 5-6 → P1, frequency 3-4 → P2, frequency 1-2 → P3
+- The key rule: Priority 1 always goes to the highest-frequency questions in THIS dataset, whatever that number is
+- Unit-level priority: matches the highest question priority within that unit
 
 Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
 
@@ -112,7 +123,7 @@ JSON structure:
   ]
 }
 
-For highFrequencyQuestions: include ONLY questions with frequency >= 2, sorted by frequency descending. These are the student's must-prepare list.
+For highFrequencyQuestions: include ONLY questions with Priority 1 (the top-tier questions for this dataset), sorted by frequency descending. These are the student's must-prepare list.
 For highFrequencyTopics: topics that appear across multiple units or multiple years.
 
 SYLLABUS:
