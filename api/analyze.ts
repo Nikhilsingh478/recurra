@@ -70,10 +70,10 @@ STRICT RULES FOR QUESTION INCLUSION:
 - Rank the units not by words, rank the units by numbers
 
 PRIORITY SYSTEM (apply exactly):
-- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority "LOW"
-- frequency = 2: "HIGH" priority
-- frequency >= 3: "HIGHEST" priority  
-- Unit-level priority: "HIGHEST" if any question has frequency >= 3, "HIGH" if any has frequency = 2, "LOW" otherwise
+- frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority 3
+- frequency = 2: Priority 2
+- frequency >= 3: Priority 1  
+- Unit-level priority: 1 if any question has frequency >= 3, 2 if any has frequency = 2, 3 otherwise
 
 FREQUENCY COUNTING:
 - Count how many different year papers contain a question about this topic/concept
@@ -90,12 +90,12 @@ JSON structure:
     {
       "unitNumber": 1,
       "unitTitle": "exact unit title from syllabus",
-      "unitPriority": "HIGHEST" | "HIGH" | "LOW",
+      "unitPriority": 1 | 2 | 3,
       "probableQuestions": [
         {
           "question": "concise question text",
           "frequency": <number>,
-          "priority": "HIGHEST" | "HIGH" | "LOW"
+          "priority": 1 | 2 | 3
         }
       ],
       "topTopics": ["topic1", "topic2", "topic3"]

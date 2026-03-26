@@ -12,14 +12,14 @@ import { analytics } from "@/lib/analytics";
 interface ProbableQuestion {
   question: string;
   frequency: number;
-  priority?: "HIGHEST" | "HIGH" | "LOW";
+  priority?: 1 | 2 | 3;
   isHighFrequency?: boolean;
 }
 interface Unit {
   unitNumber: number;
   unitTitle: string;
-  unitPriority?: "HIGHEST" | "HIGH" | "LOW";
-  priority?: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW";
+  unitPriority?: 1 | 2 | 3;
+  priority?: 1 | 2 | 3;
   probableQuestions: ProbableQuestion[];
   topTopics: string[];
 }
@@ -43,13 +43,12 @@ interface RecurraResults {
    PRIORITY MAP
 ───────────────────────────────────────────── */
 const P = {
-  HIGHEST: { bg:"rgba(245,158,11,0.08)",  border:"rgba(245,158,11,0.2)",  color:"rgb(251,191,36)",      dot:"#f59e0b", label:"HIGHEST" },
-  HIGH:    { bg:"rgba(59,111,212,0.09)",  border:"rgba(59,111,212,0.25)", color:"rgb(147,180,248)",     dot:"#3b6fd4", label:"HIGH"    },
-  MEDIUM:  { bg:"rgba(59,111,212,0.09)",  border:"rgba(59,111,212,0.25)", color:"rgb(147,180,248)",     dot:"#3b6fd4", label:"MEDIUM"  },
-  LOW:     { bg:"rgba(255,255,255,0.03)", border:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.3)",dot:"rgba(255,255,255,0.18)", label:"LOW" },
+  1: { bg:"rgba(245,158,11,0.08)",  border:"rgba(245,158,11,0.2)",  color:"rgb(251,191,36)",      dot:"#f59e0b", label:"Rank 1" },
+  2: { bg:"rgba(59,111,212,0.09)",  border:"rgba(59,111,212,0.25)", color:"rgb(147,180,248)",     dot:"#3b6fd4", label:"Rank 2"    },
+  3: { bg:"rgba(255,255,255,0.03)", border:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.3)",dot:"rgba(255,255,255,0.18)", label:"Rank 3" },
 };
 type PKey = keyof typeof P;
-const getP = (key?: string) => P[(key as PKey) ?? "LOW"] ?? P.LOW;
+const getP = (key?: number | string) => P[(key as PKey) ?? 3] ?? P[3];
 
 /* ─────────────────────────────────────────────
    REVEAL HOOK
@@ -83,7 +82,7 @@ const rs = (visible: boolean): React.CSSProperties => ({
 ───────────────────────────────────────────── */
 const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
   const { ref, visible } = useReveal(index * 45);
-  const pKey = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+  const pKey = q.priority ?? (q.isHighFrequency ? 1 : 3);
   const p = getP(pKey);
 
   return (
@@ -93,9 +92,9 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
       style={rs(visible)}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3.5">
-        {pKey === "HIGHEST" ? (
+        {pKey === 1 ? (
           <span className="mt-0.5 shrink-0 text-sm leading-none">🔥</span>
-        ) : pKey === "HIGH" ? (
+        ) : pKey === 2 ? (
           <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.dot }} />
         ) : (
           <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
@@ -103,9 +102,9 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
         <span
           className="text-[0.9rem] leading-[1.7]"
           style={{
-            color: pKey === "HIGHEST" ? "rgba(255,255,255,0.88)"
-                 : pKey === "HIGH"    ? "rgba(255,255,255,0.62)"
-                 :                      "rgba(255,255,255,0.38)",
+            color: pKey === 1 ? "rgba(255,255,255,0.88)"
+                 : pKey === 2 ? "rgba(255,255,255,0.62)"
+                 :              "rgba(255,255,255,0.38)",
           }}
         >
           {q.question}
@@ -312,41 +311,36 @@ const exportPDF = async (data: RecurraResults) => {
     const Q_TEXT_W  = COL - Q_NUM_W - Q_FREQ_W - Q_GAP;  // ~151mm
     const LH_Q      = 9 * 0.352 * 1.3;
 
-    const headerBg: Record<string, [number,number,number]> = {
-      HIGHEST: [254, 243, 199],
-      HIGH:    [218, 232, 253],
-      MEDIUM:  [218, 232, 253],
-      LOW:     [242, 244, 247],
+    const headerBg: Record<string | number, [number,number,number]> = {
+      1: [254, 243, 199],
+      2: [218, 232, 253],
+      3: [242, 244, 247],
     };
-    const headerLabelCol: Record<string, [number,number,number]> = {
-      HIGHEST: [148, 90,  8  ],
-      HIGH:    [45,  100, 200],
-      MEDIUM:  [45,  100, 200],
-      LOW:     [120, 130, 148],
+    const headerLabelCol: Record<string | number, [number,number,number]> = {
+      1: [148, 90,  8  ],
+      2: [45,  100, 200],
+      3: [120, 130, 148],
     };
-    const qTextCol: Record<string, [number,number,number]> = {
-      HIGHEST: [8,   8,   8  ],
-      HIGH:    [32,  42,  62 ],
-      MEDIUM:  [32,  42,  62 ],
-      LOW:     [138, 146, 158],
+    const qTextCol: Record<string | number, [number,number,number]> = {
+      1: [8,   8,   8  ],
+      2: [32,  42,  62 ],
+      3: [138, 146, 158],
     };
-    const qNumCol: Record<string, [number,number,number]> = {
-      HIGHEST: [148, 90,  8  ],
-      HIGH:    [45,  100, 200],
-      MEDIUM:  [45,  100, 200],
-      LOW:     [158, 162, 172],
+    const qNumCol: Record<string | number, [number,number,number]> = {
+      1: [148, 90,  8  ],
+      2: [45,  100, 200],
+      3: [158, 162, 172],
     };
-    const qFreqCol: Record<string, [number,number,number]> = {
-      HIGHEST: [148, 90,  8  ],
-      HIGH:    [45,  100, 200],
-      MEDIUM:  [45,  100, 200],
-      LOW:     [158, 162, 172],
+    const qFreqCol: Record<string | number, [number,number,number]> = {
+      1: [148, 90,  8  ],
+      2: [45,  100, 200],
+      3: [158, 162, 172],
     };
 
     data.units?.forEach((u) => {
       need(34);
 
-      const pKey = (u.unitPriority ?? u.priority ?? "LOW") as string;
+      const pKey = (u.unitPriority ?? u.priority ?? 3) as number;
       const bg   = headerBg[pKey]       ?? [242, 244, 247];
       const lc   = headerLabelCol[pKey] ?? [120, 130, 148];
 
@@ -357,7 +351,7 @@ const exportPDF = async (data: RecurraResults) => {
 
       F(6.5, ...lc, true);
       doc.text(`UNIT ${u.unitNumber}`, ML + 4, y + 5);
-      doc.text(pKey, PAGE_W - MR - 3, y + 5, { align: "right" });
+      doc.text(`Rank ${pKey}`, PAGE_W - MR - 3, y + 5, { align: "right" });
 
       F(10, 10, 14, 28, true);
       const titleLines: string[] = doc.splitTextToSize(u.unitTitle ?? "", COL - 25);
@@ -376,7 +370,7 @@ const exportPDF = async (data: RecurraResults) => {
 
       // Questions — numbered 1. 2. 3. ...
       u.probableQuestions?.forEach((q, qIdx) => {
-        const qpKey  = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
+        const qpKey  = q.priority ?? (q.isHighFrequency ? 1 : 3);
         const numStr = `${qIdx + 1}.`;
 
         const qLines: string[] = doc.splitTextToSize(q.question, Q_TEXT_W);
@@ -388,7 +382,7 @@ const exportPDF = async (data: RecurraResults) => {
         doc.text(numStr, ML, y);
 
         // Question text — bold for HIGHEST
-        F(8.5, ...(qTextCol[qpKey] ?? [138, 146, 158]), qpKey === "HIGHEST");
+        F(8.5, ...(qTextCol[qpKey] ?? [138, 146, 158]), qpKey === 1);
         doc.text(qLines, ML + Q_NUM_W, y);
 
         // Frequency — right aligned, pinned to first line
@@ -500,8 +494,8 @@ const Results = () => {
     data.units?.forEach(u => {
       L.push(`UNIT ${u.unitNumber}: ${u.unitTitle}`);
       u.probableQuestions?.forEach(q => {
-        const pk = q.priority ?? (q.isHighFrequency ? "HIGHEST" : "LOW");
-        L.push(`${pk === "HIGHEST" ? "🔥" : "·"} ${q.question}  (${q.frequency}×)`);
+        const pk = q.priority ?? (q.isHighFrequency ? 1 : 3);
+        L.push(`${pk === 1 ? "🔥" : "·"} ${q.question}  (${q.frequency}×)`);
       });
       L.push("");
     });
