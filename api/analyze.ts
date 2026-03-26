@@ -67,6 +67,7 @@ STRICT RULES FOR QUESTION INCLUSION:
 - Do NOT pad the list — quality over quantity
 - Maximum 8 questions per unit, ideally 4-6
 - Sort questions within each unit from highest frequency to lowest frequency
+- Rank the units not by words, rank the units by numbers
 
 PRIORITY SYSTEM (apply exactly):
 - frequency = 1: Include ONLY if it is a direct, core topic from syllabus. Set priority "LOW"
