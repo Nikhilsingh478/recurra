@@ -123,7 +123,7 @@ JSON structure:
   ]
 }
 
-For highFrequencyQuestions: include ONLY questions with Priority 1 (the top-tier questions for this dataset), sorted by frequency descending. These are the student's must-prepare list.
+For highFrequencyQuestions: include questions with Priority 1 OR Priority 2 (all questions that are not at the bottom of the frequency range for this dataset), sorted by frequency descending. These are the student's must-prepare list.
 For highFrequencyTopics: topics that appear across multiple units or multiple years.
 
 SYLLABUS:
