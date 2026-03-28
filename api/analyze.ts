@@ -4,10 +4,11 @@ const DAILY_LIMIT = 10;
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
 const GEMINI_KEYS = [
+  process.env.GEMINI_API_KEY || "",
   process.env.GEMINI_API_KEY_1 || "",
   process.env.GEMINI_API_KEY_2 || "",
   process.env.GEMINI_API_KEY_3 || "",
-].filter(k => k.length > 0);
+].map(k => k.trim()).filter(k => k.length > 0);
 
 function getMidnightIST(): number {
   const now = new Date();
@@ -24,7 +25,7 @@ async function callGemini(prompt: string): Promise<any> {
   
   for (const key of GEMINI_KEYS) {
     const geminiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -47,7 +48,8 @@ async function callGemini(prompt: string): Promise<any> {
     
     // If any other error from Gemini (500, 502 etc), don't try other keys
     if (!geminiRes.ok) {
-      throw new Error(`Gemini service error: ${geminiRes.status}`);
+      const errText = await geminiRes.text().catch(() => "");
+      throw new Error(`Gemini service error: ${geminiRes.status} ${errText}`.substring(0, 200));
     }
     
     // Success — return the response data
@@ -205,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
       return res.status(502).json({ 
-        error: "Analysis service unavailable. Please try again." 
+        error: `Analysis service unavailable. Details: ${message}` 
       });
     }
 
