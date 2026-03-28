@@ -25,7 +25,7 @@ async function callGemini(prompt: string): Promise<any> {
   
   for (const key of GEMINI_KEYS) {
     const geminiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
         headers: {
