@@ -4,7 +4,7 @@
 
 **Predict What Matters in Your Exams with AI-Precision**
 
-*An advanced, AI-powered exam pattern intelligence engine that cross-references university syllabi with past papers to dynamically surface the exact questions most likely to appear on your next exam.*
+*An advanced, AI-powered exam pattern intelligence engine that cross-references university syllabus with past papers to dynamically surface the exact questions most likely to appear on your next exam.*
 
 [![Live Demo](https://img.shields.io/badge/Live-recurraio.vercel.app-3b6fd4?style=for-the-badge&logo=vercel&logoColor=white)](https://recurraio.vercel.app)
 [![Built with React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
