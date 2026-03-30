@@ -120,7 +120,7 @@ const Process = () => {
         <title>How Recurra Works: 3 Steps to Exam Probables | Recurra</title>
         <meta
           name="description"
-          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under a minute."
         />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://recurraio.vercel.app/process" />
@@ -128,7 +128,7 @@ const Process = () => {
         <meta property="og:title" content="How Recurra Works: 3 Steps to Exam Probables | Recurra" />
         <meta
           property="og:description"
-          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under a minute."
         />
         <meta property="og:url" content="https://recurraio.vercel.app/process" />
         <meta property="og:type" content="website" />
@@ -139,7 +139,7 @@ const Process = () => {
         <meta name="twitter:title" content="How Recurra Works: 3 Steps to Exam Probables | Recurra" />
         <meta
           name="twitter:description"
-          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds."
+          content="Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under a minute."
         />
         <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
 
@@ -152,7 +152,7 @@ const Process = () => {
               name: "How Recurra Works: 3 Steps to Exam Probables | Recurra",
               url: "https://recurraio.vercel.app/process",
               description:
-                "Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under 30 seconds.",
+                "Learn how Recurra analyzes previous year question papers against your syllabus to find repeating patterns and generate high-probability exam questions in under a minute.",
             }),
           }}
         />
@@ -258,7 +258,7 @@ const Process = () => {
         >
           <span style={{ color: "rgba(255,255,255,0.92)" }}>Three steps.</span>
           <br />
-          <span style={{ color: "rgba(255,255,255,0.32)" }}>Under 20 seconds.</span>
+          <span style={{ color: "rgba(255,255,255,0.32)" }}>Under a minute.</span>
         </h1>
 
         {/* Subtext */}
@@ -614,7 +614,7 @@ const Process = () => {
       ═══════════════════════════════════════ */}
       <section className="py-20 sm:py-32 px-5">
         <div className="mx-auto max-w-[760px]">
-          <SL>WHAT HAPPENS IN 15 SECONDS</SL>
+          <SL>WHAT HAPPENS IN UNDER A MINUTE</SL>
 
 
           <div ref={tl.ref} className="relative mt-12">
@@ -671,7 +671,7 @@ const Process = () => {
           <p data-reveal style={{ ...rv(0.18), color: "rgba(255,255,255,0.4)", fontSize: "0.92rem", lineHeight: 1.75, maxWidth: 400, margin: "0 auto 28px" }}>
             Paste your syllabus and papers.
             <br />
-            Get your exam probables in under 20 seconds.
+            Get your exam probables in under a minute.
           </p>
           <div data-reveal style={rv(0.26)}>
             <Link to="/analyze" className="proc-shimmer-btn">

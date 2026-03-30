@@ -336,7 +336,7 @@ const Features = () => {
                 {[
                   { cRef: stat1.ref, val: String(stat1.val), label:"Result sections",         sub:"Units, Strategy, Topics, Must Prepare" },
                   { cRef: stat2.ref, val: String(stat2.val), label:"Questions max per unit",  sub:"Focused, not overwhelming" },
-                  { cRef: null,      val: "< 20s",           label:"Analysis time",           sub:"Powered by Gemini AI" },
+                  { cRef: null,      val: "< 1m",           label:"Analysis time",           sub:"Powered by Gemini AI" },
                 ].map((s, i) => (
                   <div key={i} ref={s.cRef} className="text-center py-6 sm:py-0 sm:px-8">
                     <p style={{ fontFamily:"Syne,sans-serif", fontSize:"clamp(2.2rem,4vw,3rem)", fontWeight:700, color:"rgba(255,255,255,0.92)", lineHeight:1 }}>{s.val}</p>
@@ -422,7 +422,7 @@ const Features = () => {
               Try it on your next exam.
             </h2>
             <p style={{ color:"rgba(255,255,255,0.42)", fontSize:"0.92rem", lineHeight:1.75, maxWidth:440, margin:"0 auto 28px" }}>
-              Paste your syllabus and papers. Results in under 20 seconds.
+              Paste your syllabus and papers. Results in under a minute.
             </p>
             <Link to="/analyze" className="docs-cta-btn">
               Generate Probables →

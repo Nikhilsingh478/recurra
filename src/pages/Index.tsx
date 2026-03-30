@@ -77,7 +77,7 @@ const Index = () => {
     <>
       <Helmet>
         <title>Recurra: Find Repeating Questions in Your University Exam Papers</title>
-        <meta name="description" content="Recurra analyzes your university syllabus and previous year papers using AI to find which questions repeat most. Get unit-wise high-probability exam questions in under 30 seconds. Free for students." />
+        <meta name="description" content="Recurra analyzes your university syllabus and previous year papers using AI to find which questions repeat most. Get unit-wise high-probability exam questions in under a minute. Free for students." />
         <link rel="canonical" href="https://recurraio.vercel.app/" />
       </Helmet>
       <style>{`
@@ -274,7 +274,7 @@ const Index = () => {
                     </h3>
                     <p style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.7)", lineHeight:1.75, maxWidth:460 }}>
                       Frequency counting. Syllabus filtering. Priority ranking.
-                      All in under 20 seconds, not a generic dump, a structured analysis.
+                      All in under a minute, not a generic dump, a structured analysis.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-6">
@@ -320,7 +320,7 @@ const Index = () => {
             style={{ border:"1px solid rgba(255,255,255,0.055)", background:"rgba(255,255,255,0.018)" }}
           >
             {[
-              { num:"< 20s", label:"From paste to results" },
+              { num:"< 1m", label:"From paste to results" },
               { num:"8",     label:"Max questions per unit" },
               { num:"4",     label:"Result sections" },
             ].map((s, i) => (
@@ -355,7 +355,7 @@ const Index = () => {
             </h2>
             <p style={{ ...rs(ctaReveal.visible,120), fontSize:"0.92rem", color:"rgba(255,255,255,0.65)", lineHeight:1.75, maxWidth:380, margin:"0 auto 36px" }}>
               Paste your syllabus and previous year papers.
-              <br />Recurra does the rest in under 20 seconds.
+              <br />Recurra does the rest in under a minute.
             </p>
             <div style={rs(ctaReveal.visible,180)}>
               <Magnet padding={60} magnetStrength={3}>
@@ -429,7 +429,7 @@ const Index = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  Previous Year Paper Analysis in Under 30 Seconds
+                  Previous Year Paper Analysis in Under a Minute
                 </h2>
                 <p
                   style={{

@@ -403,7 +403,7 @@ const Docs = () => {
               Ready to find what matters?
             </h2>
             <p style={{ color:"rgba(255,255,255,0.42)", fontSize:"0.92rem", lineHeight:1.75, maxWidth:440, margin:"0 auto 28px" }}>
-              Paste your syllabus and papers. Get your exam probables in under 20 seconds.
+              Paste your syllabus and papers. Get your exam probables in under a minute.
             </p>
             <Link to="/analyze" className="docs-cta-btn">
               Generate Probables →

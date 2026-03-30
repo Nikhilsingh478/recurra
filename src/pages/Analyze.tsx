@@ -556,7 +556,7 @@ const Analyze = () => {
 
               <p className="mt-3 text-center text-[10px] text-white/18">
                 {bothFilled
-                  ? "Powered by Gemini AI · typically under 20 seconds"
+                  ? "Powered by Gemini AI · typically under a minute"
                   : "Complete both fields above to continue"}
               </p>
             </div>
