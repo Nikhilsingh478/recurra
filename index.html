@@ -1,102 +1,104 @@
 <!doctype html>
+
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Recurra — AI Exam Pattern Analysis</title>
-    <meta name="description" content="Recurra analyzes your university syllabus and previous year question papers using AI. Find which questions repeat most frequently, ranked by priority. Get unit-wise high-probability exam questions in under a minute. Free for university students." />
-    <meta name="keywords" content="exam pattern analysis, previous year papers, university exam preparation, probable questions, syllabus analysis, AI exam tool, repeating questions, exam prediction, question frequency analysis, university exam AI" />
-    <meta name="author" content="Recurra" />
-    <meta name="robots" content="index, follow" />
-    <meta name="googlebot" content="index, follow" />
-    <meta name="msapplication-TileImage" content="/favicon.png" />
-    <link rel="canonical" href="https://recurraio.vercel.app" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recurra — AI Exam Pattern Analysis</title>
 
-    <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
-    <link rel="icon" type="image/png" sizes="32x32" href="https://recurraio.vercel.app/favicon.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="https://recurraio.vercel.app/favicon.png" />
-    <link rel="shortcut icon" href="https://recurraio.vercel.app/favicon.png" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
+  <!-- SEO -->
+  <meta name="description"
+    content="Recurra analyzes your university syllabus and previous year question papers using AI. Find which questions repeat most frequently, ranked by priority. Get unit-wise high-probability exam questions in under a minute. Free for university students." />
+  <meta name="author" content="Recurra" />
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow" />
+  <link rel="canonical" href="https://recurraio.vercel.app/" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap" /></noscript>
-    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
-    <link
-      rel="preload"
-      href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" />
-    </noscript>
+  <!-- Favicon (FIXED PROPERLY) -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="Recurra — AI Exam Pattern Analysis" />
-    <meta property="og:description" content="Predict what repeats. Prepare what matters. AI-powered exam pattern analysis for university students." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://recurraio.vercel.app" />
-    <meta property="og:site_name" content="Recurra" />
-    <meta property="og:image" content="https://recurraio.vercel.app/og_image.webp" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Recurra — AI-Powered Exam Pattern Analysis" />
+  <!-- Theme -->
+  <meta name="theme-color" content="#0b0f1a" />
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Recurra — AI Exam Pattern Analysis" />
-    <meta name="twitter:description" content="Predict what repeats. Prepare what matters. AI-powered exam pattern analysis for university students." />
-    <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap"
+    as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap" />
+  </noscript>
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SGY0DD14NX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-SGY0DD14NX');
-    </script>
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="preload" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" as="style"
+    onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" />
+  </noscript>
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Recurra",
-      "url": "https://recurraio.vercel.app",
-      "logo": "https://recurraio.vercel.app/favicon.png",
-      "description": "AI-powered exam pattern analysis tool that finds repeating questions from university previous year papers and predicts high-probability exam questions ranked by frequency.",
-      "applicationCategory": "EducationApplication",
-      "operatingSystem": "Web Browser",
-      "inLanguage": "en-IN",
-      "isAccessibleForFree": true,
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "INR"
-      },
-      "featureList": [
-        "Previous year question paper analysis",
-        "Syllabus-based question filtering",
-        "Frequency-based question ranking",
-        "Unit-wise exam probable questions",
-        "AI-powered pattern detection",
-        "PDF export of exam probables",
-        "Must-prepare question list"
-      ],
-      "creator": {
-        "@type": "Organization",
-        "name": "Recurra"
-      }
-    }
-    </script>
-  </head>
+  <!-- Open Graph -->
+  <meta property="og:title" content="Recurra — AI Exam Pattern Analysis" />
+  <meta property="og:description"
+    content="Predict what repeats. Prepare what matters. AI-powered exam pattern analysis for university students." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://recurraio.vercel.app/" />
+  <meta property="og:site_name" content="Recurra" />
+  <meta property="og:image" content="https://recurraio.vercel.app/og_image.webp" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Recurra — AI-Powered Exam Pattern Analysis" />
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Recurra — AI Exam Pattern Analysis" />
+  <meta name="twitter:description"
+    content="Predict what repeats. Prepare what matters. AI-powered exam pattern analysis for university students." />
+  <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
+
+  <!-- Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SGY0DD14NX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-SGY0DD14NX');
+  </script>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Recurra",
+  "url": "https://recurraio.vercel.app/",
+  "logo": "https://recurraio.vercel.app/apple-touch-icon.png",
+  "description": "AI-powered exam pattern analysis tool that finds repeating questions from university previous year papers and predicts high-probability exam questions ranked by frequency.",
+  "applicationCategory": "EducationApplication",
+  "operatingSystem": "Web Browser",
+  "inLanguage": "en-IN",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  },
+  "creator": {
+    "@type": "Organization",
+    "name": "Recurra"
+  }
+}
+</script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
