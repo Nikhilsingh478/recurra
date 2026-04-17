@@ -15,4 +15,5 @@
 - Optional fallback keys: `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`.
 
 ## PDF Export
-- `src/pages/Results.tsx` keeps jsPDF text rendering and sanitizes LaTeX math into readable plain-text math before writing dynamic content to the PDF.
+- `src/pages/Results.tsx` uses a hidden PDF-only report (`PDFReport`) and `html2pdf.js` so KaTeX math is rendered visually before export.
+- The export keeps the same result sections: cover/header, strategy, high-frequency topics, unit-wise questions, must-prepare list, and footer.

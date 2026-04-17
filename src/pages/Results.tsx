@@ -52,128 +52,6 @@ const P = {
 type PKey = keyof typeof P;
 const getP = (key?: number | string) => P[(key as PKey) ?? 3] ?? P[3];
 
-const extractBraced = (value: string, start: number) => {
-  if (value[start] !== "{") return null;
-  let depth = 0;
-  for (let i = start; i < value.length; i++) {
-    if (value[i] === "{") depth++;
-    if (value[i] === "}") depth--;
-    if (depth === 0) {
-      return {
-        content: value.slice(start + 1, i),
-        end: i + 1,
-      };
-    }
-  }
-  return null;
-};
-
-const wrapMathFunctionArgs = (value: string) =>
-  value.replace(/\b(sin|cos|tan|log)\s+([A-Za-z](?:\s*[A-Za-z0-9])?)/g, (_match, fn, arg) =>
-    `${fn}(${String(arg).replace(/\s+/g, "")})`
-  );
-
-const replaceLatexFractions = (input: string): string => {
-  let output = input;
-  let index = output.indexOf("\\frac");
-
-  while (index !== -1) {
-    const numerator = extractBraced(output, index + 5);
-    if (!numerator) break;
-    const denominator = extractBraced(output, numerator.end);
-    if (!denominator) break;
-
-    const cleanNumerator = sanitizeMathForPDF(numerator.content);
-    const cleanDenominator = sanitizeMathForPDF(denominator.content);
-    const hasCompoundNumerator = /[+\-*/]/.test(cleanNumerator);
-    const numeratorText = hasCompoundNumerator ? `(${cleanNumerator})` : cleanNumerator;
-    const fraction = hasCompoundNumerator
-      ? `${numeratorText} / ${cleanDenominator}`
-      : `(${numeratorText} / ${cleanDenominator})`;
-    output = output.slice(0, index) + fraction + output.slice(denominator.end);
-    index = output.indexOf("\\frac", index + fraction.length);
-  }
-
-  return output;
-};
-
-const replaceLatexSquareRoots = (input: string): string => {
-  let output = input;
-  let index = output.indexOf("\\sqrt");
-
-  while (index !== -1) {
-    const radicand = extractBraced(output, index + 5);
-    if (!radicand) break;
-    const replacement = `sqrt(${sanitizeMathForPDF(radicand.content)})`;
-    output = output.slice(0, index) + replacement + output.slice(radicand.end);
-    index = output.indexOf("\\sqrt", index + replacement.length);
-  }
-
-  return output;
-};
-
-const sanitizeMathForPDF = (input: string): string => {
-  if (!input) return "";
-
-  let output = String(input)
-    .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
-    .replace(/\$([^$]*?)\$/g, "$1");
-
-  output = replaceLatexFractions(output);
-  output = replaceLatexSquareRoots(output);
-
-  output = output
-    .replace(/\\left\\\{/g, "{")
-    .replace(/\\right\\\}/g, "}")
-    .replace(/\\left\(/g, "(")
-    .replace(/\\right\)/g, ")")
-    .replace(/\\left\[/g, "[")
-    .replace(/\\right\]/g, "]")
-    .replace(/\\left\|/g, "|")
-    .replace(/\\right\|/g, "|")
-    .replace(/\\cdot\b/g, "*")
-    .replace(/\\times\b/g, "*")
-    .replace(/\\sin\b/g, "sin")
-    .replace(/\\cos\b/g, "cos")
-    .replace(/\\tan\b/g, "tan")
-    .replace(/\\log\b/g, "log")
-    .replace(/\\ln\b/g, "ln")
-    .replace(/\\exp\b/g, "exp")
-    .replace(/\\pi\b/g, "pi")
-    .replace(/\\theta\b/g, "theta")
-    .replace(/\\alpha\b/g, "alpha")
-    .replace(/\\beta\b/g, "beta")
-    .replace(/\\gamma\b/g, "gamma")
-    .replace(/\\delta\b/g, "delta")
-    .replace(/\\lambda\b/g, "lambda")
-    .replace(/\\mu\b/g, "mu")
-    .replace(/\\infty\b/g, "infinity")
-    .replace(/\\leq\b/g, "<=")
-    .replace(/\\geq\b/g, ">=")
-    .replace(/\\neq\b/g, "!=")
-    .replace(/\\to\b/g, "->")
-    .replace(/\\,/g, " ")
-    .replace(/\\;/g, " ")
-    .replace(/\\!/g, "")
-    .replace(/\\:/g, " ")
-    .replace(/\\\s/g, " ")
-    .replace(/([A-Za-z0-9)])_\{([^{}]+)\}/g, "$1$2")
-    .replace(/([A-Za-z0-9)])_([A-Za-z0-9])/g, "$1$2")
-    .replace(/\^\{([^{}]+)\}/g, "^$1")
-    .replace(/\\[a-zA-Z]+/g, "")
-    .replace(/\\/g, "");
-
-  output = wrapMathFunctionArgs(output)
-    .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/([({[])\s+/g, "$1")
-    .replace(/\s+([)}\]])/g, "$1")
-    .replace(/\s*([+\-*/=<>])\s*/g, " $1 ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return output || String(input).replace(/\\/g, "").trim();
-};
-
 /* ─────────────────────────────────────────────
    REVEAL HOOK
 ───────────────────────────────────────────── */
@@ -328,310 +206,185 @@ const UnitSection = ({ unit, idx }: { unit: Unit; idx: number }) => {
   );
 };
 
-/* ─────────────────────────────────────────────
-   PDF EXPORT — fixed version
-   Drop this entire function into Results.tsx
-   replacing the existing exportPDF function
-───────────────────────────────────────────── */
-
-const exportPDF = async (data: RecurraResults) => {
-  try {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-
-    const PAGE_W   = 210;
-    const ML       = 18;
-    const MR       = 18;
-    const COL      = PAGE_W - ML - MR;   // 174mm
-    const SAFE_BTM = 280;
-    let   y        = ML;
-
-    /* ── helpers ── */
-    const F = (sz: number, r: number, g: number, b: number, bold = false) => {
-      doc.setFontSize(sz);
-      doc.setTextColor(r, g, b);
-      doc.setFont("helvetica", bold ? "bold" : "normal");
-    };
-
-    const need = (mm: number) => {
-      if (y + mm > SAFE_BTM) { doc.addPage(); y = ML; }
-    };
-
-    const rule = (r = 215, g = 218, b = 224, lw = 0.22) => {
-      doc.setDrawColor(r, g, b); doc.setLineWidth(lw);
-      doc.line(ML, y, PAGE_W - MR, y); y += 4;
-    };
-
-    /* ── header bar ── */
-    doc.setFillColor(5, 8, 16);
-    doc.rect(0, 0, PAGE_W, 38, "F");
-    F(16, 255, 255, 255, true);  doc.text("RECURRA", ML, 14);
-    F(8,  136, 153, 170);        doc.text("Exam Pattern Analysis", ML, 22);
-    F(7.5,136, 153, 170);
-    doc.text(`Generated: ${new Date(data.timestamp ?? "").toLocaleString("en-IN")}`, ML, 30);
-    y = 46;
-
-    /* ── subject + stats ── */
-    F(18, 10, 14, 28, true);
-    const subjLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(data.subject ?? "General"), COL);
-    doc.text(subjLines, ML, y);
-    y += subjLines.length * 8 + 2;
-
-    F(10, 90, 100, 120);
-    doc.text("Exam Probables", ML, y); y += 5;
-    rule(200, 205, 215, 0.4);
-
-    F(8.5, 110, 120, 140);
-    const totalQ = data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0;
-    doc.text(
-      `${data.totalYearsAnalyzed ?? 0} years analyzed  |  ${data.units?.length ?? 0} units  |  ${totalQ} questions`,
-      ML, y
-    );
-    y += 12;
-
-    /* ── exam strategy box — measure text FIRST, then draw box ── */
-    need(40);
-
-    const STRAT_PAD_X = 6;
-    const STRAT_PAD_B = 12;
-    const LH_STRAT    = 9 * 0.352 * 1.65; // ~5.2mm — generous to prevent overflow
-
-    const stratW     = COL - STRAT_PAD_X * 2 - 6; // extra 6mm safety so lines wrap before edge
-    const stratLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(data.examStrategy ?? ""), stratW);
-    const stratBodyH = stratLines.length * LH_STRAT;
-
-    // label = 5mm from top, gap = 4mm, then text starts at 5+4=9mm from top
-    const LABEL_Y_OFF  = 5;     // label sits 5mm below box top
-    const TEXT_Y_OFF   = 13;    // text starts 13mm below box top (label 5mm + 8mm gap)
-    const boxH         = TEXT_Y_OFF + stratBodyH + STRAT_PAD_B;
-
-    doc.setFillColor(236, 242, 255);
-    doc.setDrawColor(175, 200, 245); doc.setLineWidth(0.28);
-    doc.roundedRect(ML, y, COL, boxH, 2.5, 2.5, "FD");
-
-    const boxTop = y;
-
-    // Label
-    F(7, 59, 111, 212, true);
-    doc.text("EXAM STRATEGY", ML + STRAT_PAD_X, boxTop + LABEL_Y_OFF);
-
-    // Strategy text — starts below label with clear gap
-    F(9, 28, 38, 58);
-    stratLines.forEach((line, i) => {
-      doc.text(line, ML + STRAT_PAD_X, boxTop + TEXT_Y_OFF + i * LH_STRAT);
-    });
-
-    y = boxTop + boxH + 8;
-
-    /* ── high freq topics ── */
-    const hfT = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
-    if (hfT.length > 0) {
-      need(22);
-      F(7, 59, 111, 212, true);
-      doc.text("HIGH FREQUENCY TOPICS", ML, y); y += 5.5;
-
-      F(8.5, 50, 58, 78);
-      // Safety buffer to guarantee no right-edge overflow even with long unbroken tokens
-      const HFT_SAFE_W = COL - 4;
-      const SEP = "  |  ";
-
-      // Greedy pack topics into lines that strictly fit within HFT_SAFE_W
-      const lines: string[] = [];
-      let current = "";
-      hfT.forEach((rawTopic) => {
-        const topic = sanitizeMathForPDF(String(rawTopic ?? "").trim());
-        if (!topic) return;
-
-        // If a single topic is itself too wide, hard-wrap it first
-        const pieces: string[] =
-          doc.getTextWidth(topic) > HFT_SAFE_W
-            ? (doc.splitTextToSize(topic, HFT_SAFE_W) as string[])
-            : [topic];
-
-        pieces.forEach((piece, idx) => {
-          const sep = current && idx === 0 ? SEP : current ? " " : "";
-          const candidate = current ? `${current}${sep}${piece}` : piece;
-          if (doc.getTextWidth(candidate) <= HFT_SAFE_W) {
-            current = candidate;
-          } else {
-            if (current) lines.push(current);
-            current = piece;
-          }
-        });
-      });
-      if (current) lines.push(current);
-
-      doc.text(lines, ML, y);
-      y += lines.length * (8.5 * 0.352 * 1.25) + 7;
-    }
-
-    /* ── units ── */
-
-    // Layout — numbered prefix max "10. " = ~8mm
-    const Q_NUM_W   = 9;    // width reserved for "1." "2." etc.
-    const Q_FREQ_W  = 12;   // right side for "2x"
-    const Q_GAP     = 2;
-    const Q_TEXT_W  = COL - Q_NUM_W - Q_FREQ_W - Q_GAP;  // ~151mm
-    const LH_Q      = 9 * 0.352 * 1.3;
-
-    const headerBg: Record<string | number, [number,number,number]> = {
-      1: [254, 243, 199],
-      2: [218, 232, 253],
-      3: [242, 244, 247],
-    };
-    const headerLabelCol: Record<string | number, [number,number,number]> = {
-      1: [148, 90,  8  ],
-      2: [45,  100, 200],
-      3: [120, 130, 148],
-    };
-    const qTextCol: Record<string | number, [number,number,number]> = {
-      1: [8,   8,   8  ],
-      2: [32,  42,  62 ],
-      3: [138, 146, 158],
-    };
-    const qNumCol: Record<string | number, [number,number,number]> = {
-      1: [148, 90,  8  ],
-      2: [45,  100, 200],
-      3: [158, 162, 172],
-    };
-    const qFreqCol: Record<string | number, [number,number,number]> = {
-      1: [148, 90,  8  ],
-      2: [45,  100, 200],
-      3: [158, 162, 172],
-    };
-
-    data.units?.forEach((u) => {
-      need(34);
-
-      const pKey = (u.unitPriority ?? u.priority ?? 3) as number;
-      const bg   = headerBg[pKey]       ?? [242, 244, 247];
-      const lc   = headerLabelCol[pKey] ?? [120, 130, 148];
-
-      // Unit header — 18mm
-      const HDR_H = 18;
-      doc.setFillColor(...bg);
-      doc.roundedRect(ML, y, COL, HDR_H, 2, 2, "F");
-
-      F(6.5, ...lc, true);
-      doc.text(`UNIT ${u.unitNumber}`, ML + 4, y + 5);
-      doc.text(`Rank ${pKey}`, PAGE_W - MR - 3, y + 5, { align: "right" });
-
-      F(10, 10, 14, 28, true);
-      const titleLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(u.unitTitle ?? ""), COL - 25);
-      doc.text(titleLines[0], ML + 4, y + 13);
-      y += HDR_H + 3;
-
-      // Topics
-      if (u.topTopics?.length > 0) {
-        need(10);
-        const topStr = u.topTopics.map((topic) => sanitizeMathForPDF(topic)).filter(Boolean).join("  |  ");
-        F(7.5, 128, 138, 152);
-        const tLines: string[] = doc.splitTextToSize(topStr, COL);
-        doc.text(tLines, ML, y);
-        y += tLines.length * 3.8 + 4;
-      }
-
-      // Questions — numbered 1. 2. 3. ...
-      u.probableQuestions?.forEach((q, qIdx) => {
-        const qpKey  = q.priority ?? (q.isHighFrequency ? 1 : 3);
-        const numStr = `${qIdx + 1}.`;
-
-        const qLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(q.question), Q_TEXT_W);
-        const rowH = qLines.length * LH_Q + 2;
-        need(rowH + 5);
-
-        // Number — coloured by priority
-        F(8.5, ...(qNumCol[qpKey] ?? [158, 162, 172]), true);
-        doc.text(numStr, ML, y);
-
-        // Question text — bold for HIGHEST
-        F(8.5, ...(qTextCol[qpKey] ?? [138, 146, 158]), qpKey === 1);
-        doc.text(qLines, ML + Q_NUM_W, y);
-
-        // Frequency — right aligned, pinned to first line
-        F(8, ...(qFreqCol[qpKey] ?? [158, 162, 172]), true);
-        doc.text(`${q.frequency}x`, PAGE_W - MR, y, { align: "right" });
-
-        y += rowH;
-
-        // Thin separator
-        doc.setDrawColor(218, 222, 228); doc.setLineWidth(0.15);
-        doc.line(ML + Q_NUM_W, y, PAGE_W - MR, y);
-        y += 3;
-      });
-
-      y += 5;
-    });
-
-    /* ── must prepare ── */
-    const hfQraw = data.highFrequencyQuestions ??
-      (data.units?.flatMap(u =>
+const getMustPrepare = (data: RecurraResults): HFQuestion[] =>
+  data.highFrequencyQuestions?.length
+    ? data.highFrequencyQuestions
+    : (data.units?.flatMap(u =>
         (u.probableQuestions ?? [])
           .filter(q => q.frequency >= 2)
-          .map(q => ({
-            question: sanitizeMathForPDF(q.question),
-            frequency: q.frequency,
-            unit: sanitizeMathForPDF(u.unitTitle),
-          }))
+          .map(q => ({ question: q.question, frequency: q.frequency, unit: u.unitTitle }))
       ) ?? []).sort((a, b) => b.frequency - a.frequency);
 
-    if (hfQraw.length > 0) {
-      need(26);
+const getExportFileName = (subject?: string) =>
+  `${(subject || "recurra").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "recurra"}_exam_probables.pdf`;
 
-      doc.setFillColor(255, 247, 222);
-      doc.setDrawColor(228, 192, 135); doc.setLineWidth(0.28);
-      doc.roundedRect(ML, y, COL, 12, 2, 2, "FD");
-      F(7.5, 148, 90, 8, true);
-      doc.text("MUST PREPARE — HIGH FREQUENCY QUESTIONS", ML + 5, y + 7.5);
-      y += 16;
+const waitForPdfRender = async () => {
+  if ("fonts" in document) {
+    await document.fonts.ready;
+  }
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  await new Promise(resolve => setTimeout(resolve, 350));
+};
 
-      hfQraw.forEach((q, qIdx) => {
-        const qLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(q.question), Q_TEXT_W);
-        const rowH = qLines.length * LH_Q + 2;
-        need(rowH + 12);
+const PDFReport = ({ data }: { data: RecurraResults }) => {
+  const hfTopics = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
+  const mustPrepare = getMustPrepare(data);
+  const totalQ = data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0;
 
-        // Number
-        F(8.5, 148, 90, 8, true);
-        doc.text(`${qIdx + 1}.`, ML, y);
+  return (
+    <article id="pdf-content" className="pdf-report">
+      <header className="pdf-cover pdf-avoid">
+        <div>
+          <p className="pdf-kicker">RECURRA</p>
+          <h1>{data.subject ?? "General"}</h1>
+          <p className="pdf-subtitle">Exam Probables</p>
+        </div>
+        <div className="pdf-meta">
+          <span>{data.totalYearsAnalyzed ?? 0} years analyzed</span>
+          <span>{data.units?.length ?? 0} units</span>
+          <span>{totalQ} questions</span>
+        </div>
+      </header>
 
-        // Question text
-        F(8.5, 8, 8, 8, true);
-        doc.text(qLines, ML + Q_NUM_W, y);
+      <section className="pdf-card pdf-avoid">
+        <p className="pdf-label">Exam Strategy</p>
+        <div className="pdf-strategy">
+          <MathRenderer content={data.examStrategy ?? "Review high-frequency topics first."} />
+        </div>
+      </section>
 
-        // Frequency
-        F(8, 148, 90, 8, true);
-        doc.text(`${q.frequency}x`, PAGE_W - MR, y, { align: "right" });
+      {hfTopics.length > 0 && (
+        <section className="pdf-section pdf-avoid">
+          <p className="pdf-label">High Frequency Topics</p>
+          <div className="pdf-topic-list">
+            {hfTopics.map((topic, index) => (
+              <span key={`${topic}-${index}`} className="pdf-topic">
+                <MathRenderer content={topic} />
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
-        y += rowH;
+      <section className="pdf-section">
+        <p className="pdf-label">Unit-wise Probable Questions</p>
+        {data.units?.map((unit) => {
+          const up = getP(unit.unitPriority ?? unit.priority);
+          return (
+            <div key={unit.unitNumber} className="pdf-unit pdf-avoid">
+              <div className="pdf-unit-header">
+                <div>
+                  <p>Unit {unit.unitNumber}</p>
+                  <h2><MathRenderer content={unit.unitTitle ?? ""} /></h2>
+                </div>
+                <span style={{ color: up.color, borderColor: up.border, background: up.bg }}>
+                  {up.label}
+                </span>
+              </div>
 
-        // Unit name
-        F(7.5, 148, 156, 168);
-        doc.text(sanitizeMathForPDF(q.unit ?? ""), ML + Q_NUM_W, y);
-        y += 5.5;
+              {unit.topTopics?.length > 0 && (
+                <div className="pdf-unit-topics">
+                  {unit.topTopics.map((topic, index) => (
+                    <span key={`${topic}-${index}`}>
+                      <MathRenderer content={topic} />
+                    </span>
+                  ))}
+                </div>
+              )}
 
-        // Separator
-        doc.setDrawColor(232, 206, 165); doc.setLineWidth(0.15);
-        doc.line(ML + Q_NUM_W, y, PAGE_W - MR, y);
-        y += 3;
-      });
-    }
+              <div className="pdf-question-list">
+                {unit.probableQuestions?.map((q, index) => {
+                  const qpKey = q.priority ?? (q.isHighFrequency ? 1 : 3);
+                  const qp = getP(qpKey);
+                  return (
+                    <div key={index} className="pdf-question pdf-avoid">
+                      <span className="pdf-question-number" style={{ color: qp.color }}>
+                        {index + 1}.
+                      </span>
+                      <div>
+                        <MathRenderer content={q.question} />
+                        {q.solution && (
+                          <div className="pdf-solution">
+                            <p>Solution</p>
+                            <MathRenderer content={q.solution} />
+                          </div>
+                        )}
+                      </div>
+                      <span className="pdf-frequency" style={{ color: qp.color }}>
+                        {q.frequency}×
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </section>
 
-    /* ── footer — every page ── */
-    const pc = doc.getNumberOfPages();
-    for (let i = 1; i <= pc; i++) {
-      doc.setPage(i);
-      doc.setDrawColor(208, 212, 220); doc.setLineWidth(0.18);
-      doc.line(ML, 287, PAGE_W - MR, 287);
-      F(7, 178, 183, 193);
-      doc.text("Generated by Recurra", ML, 292);
-      doc.text(`${i} / ${pc}`, PAGE_W - MR, 292, { align: "right" });
-    }
+      {mustPrepare.length > 0 && (
+        <section className="pdf-section pdf-avoid">
+          <p className="pdf-label">Must Prepare — High Frequency Questions</p>
+          <div className="pdf-must-list">
+            {mustPrepare.map((q, index) => (
+              <div key={index} className="pdf-must-item pdf-avoid">
+                <span>{index + 1}.</span>
+                <div>
+                  <MathRenderer content={q.question} />
+                  <p>{q.unit}</p>
+                </div>
+                <strong>{q.frequency}×</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-    doc.save(`${sanitizeMathForPDF(data.subject ?? "recurra").replace(/\s+/g, "_")}_exam_probables.pdf`);
+      <footer className="pdf-footer">
+        <span>Generated by Recurra</span>
+        <span>{new Date(data.timestamp ?? Date.now()).toLocaleString("en-IN")}</span>
+      </footer>
+    </article>
+  );
+};
 
-  } catch (err) {
-    console.error("PDF export failed:", err);
-    alert("PDF export failed. Make sure jspdf is installed: npm install jspdf");
+const exportPDF = async (data: RecurraResults) => {
+  const element = document.getElementById("pdf-content");
+  if (!element) {
+    throw new Error("PDF content is not ready");
+  }
+
+  document.body.classList.add("pdf-mode");
+
+  try {
+    await waitForPdfRender();
+    const html2pdfModule = await import("html2pdf.js");
+    const html2pdf = html2pdfModule.default ?? html2pdfModule;
+
+    await html2pdf()
+      .set({
+        margin: 0,
+        filename: getExportFileName(data.subject),
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2.6,
+          useCORS: true,
+          backgroundColor: "#050810",
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 860,
+          logging: false,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+        pagebreak: {
+          mode: ["css", "legacy"],
+          avoid: [".pdf-avoid", ".katex-display", ".pdf-question", ".pdf-must-item"],
+        },
+      })
+      .from(element)
+      .save();
+  } finally {
+    document.body.classList.remove("pdf-mode");
   }
 };
 
@@ -675,9 +428,15 @@ const Results = () => {
   const handleExport = async () => {
     if (!data || exporting) return;
     setExporting(true);
-    analytics.pdfExported();
-    await exportPDF(data);
-    setExporting(false);
+    try {
+      analytics.pdfExported();
+      await exportPDF(data);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      alert("PDF export failed. Please try again in a moment.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const fmt = (ts?: string) => ts
@@ -913,10 +672,251 @@ const Results = () => {
           color: rgba(255,255,255,0.18); margin-bottom: 22px;
         }
 
+        .pdf-stage {
+          position: fixed;
+          left: -12000px;
+          top: 0;
+          width: 860px;
+          min-height: 100vh;
+          pointer-events: none;
+          z-index: -1;
+          background: #050810;
+        }
+        .pdf-report {
+          width: 860px;
+          min-height: 1216px;
+          padding: 44px 48px 36px;
+          color: rgba(255,255,255,0.84);
+          background:
+            radial-gradient(ellipse 70% 34% at 8% 2%, rgba(59,111,212,0.18), transparent 62%),
+            radial-gradient(ellipse 55% 36% at 95% 100%, rgba(245,158,11,0.09), transparent 62%),
+            #050810;
+          font-family: inherit;
+          line-height: 1.65;
+          overflow: hidden;
+        }
+        .pdf-report * {
+          box-sizing: border-box;
+          animation: none !important;
+          transition: none !important;
+          filter: none !important;
+        }
+        .pdf-cover {
+          display: flex;
+          justify-content: space-between;
+          gap: 28px;
+          padding: 30px 32px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 24px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018));
+        }
+        .pdf-kicker, .pdf-label {
+          margin: 0;
+          color: rgba(147,180,248,0.9);
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+        }
+        .pdf-cover h1 {
+          margin: 12px 0 0;
+          color: #fff;
+          font-size: 34px;
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+        }
+        .pdf-subtitle {
+          margin: 10px 0 0;
+          color: rgba(255,255,255,0.42);
+          font-size: 16px;
+        }
+        .pdf-meta {
+          min-width: 190px;
+          display: grid;
+          gap: 9px;
+          align-content: start;
+        }
+        .pdf-meta span {
+          display: block;
+          padding: 8px 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          color: rgba(255,255,255,0.58);
+          font-size: 12px;
+          text-align: center;
+        }
+        .pdf-card, .pdf-section {
+          margin-top: 26px;
+        }
+        .pdf-card {
+          padding: 24px 28px;
+          border: 1px solid rgba(59,111,212,0.22);
+          border-left: 3px solid rgba(59,111,212,0.8);
+          border-radius: 20px;
+          background: rgba(59,111,212,0.06);
+        }
+        .pdf-strategy {
+          margin-top: 12px;
+          color: rgba(255,255,255,0.68);
+          font-size: 14px;
+        }
+        .pdf-topic-list, .pdf-unit-topics {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 14px;
+        }
+        .pdf-topic, .pdf-unit-topics span {
+          display: inline-flex;
+          max-width: 100%;
+          padding: 6px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(245,158,11,0.16);
+          background: rgba(245,158,11,0.07);
+          color: rgb(251,191,36);
+          font-size: 12px;
+          line-height: 1.45;
+        }
+        .pdf-unit {
+          margin-top: 20px;
+          padding: 22px 24px;
+          border: 1px solid rgba(255,255,255,0.065);
+          border-radius: 20px;
+          background: rgba(255,255,255,0.022);
+        }
+        .pdf-unit-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 22px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .pdf-unit-header p {
+          margin: 0 0 6px;
+          color: rgba(255,255,255,0.28);
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+        .pdf-unit-header h2 {
+          margin: 0;
+          color: rgba(255,255,255,0.9);
+          font-size: 19px;
+          line-height: 1.32;
+        }
+        .pdf-unit-header > span {
+          height: max-content;
+          padding: 5px 11px;
+          border: 1px solid;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+        .pdf-unit-topics span {
+          border-color: rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.035);
+          color: rgba(255,255,255,0.45);
+        }
+        .pdf-question-list {
+          margin-top: 16px;
+          border-top: 1px solid rgba(255,255,255,0.045);
+        }
+        .pdf-question {
+          display: grid;
+          grid-template-columns: 26px 1fr 42px;
+          gap: 10px;
+          padding: 14px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.045);
+          color: rgba(255,255,255,0.76);
+          font-size: 13px;
+        }
+        .pdf-question-number, .pdf-frequency {
+          font-weight: 800;
+        }
+        .pdf-frequency {
+          text-align: right;
+        }
+        .pdf-solution {
+          margin-top: 10px;
+          padding: 10px 12px;
+          border: 1px solid rgba(255,255,255,0.065);
+          border-radius: 12px;
+          background: rgba(255,255,255,0.025);
+          color: rgba(255,255,255,0.52);
+          font-size: 12px;
+        }
+        .pdf-solution p {
+          margin: 0 0 4px;
+          color: rgba(255,255,255,0.28);
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+        .pdf-must-list {
+          margin-top: 14px;
+          display: grid;
+          gap: 10px;
+        }
+        .pdf-must-item {
+          display: grid;
+          grid-template-columns: 28px 1fr 40px;
+          gap: 12px;
+          padding: 15px 16px;
+          border: 1px solid rgba(245,158,11,0.14);
+          border-radius: 16px;
+          background: rgba(245,158,11,0.045);
+          color: rgba(255,255,255,0.78);
+          font-size: 13px;
+        }
+        .pdf-must-item span, .pdf-must-item strong {
+          color: rgb(251,191,36);
+          font-weight: 800;
+        }
+        .pdf-must-item p {
+          margin: 5px 0 0;
+          color: rgba(255,255,255,0.32);
+          font-size: 11px;
+        }
+        .pdf-footer {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 30px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.28);
+          font-size: 11px;
+        }
+        .pdf-report .katex {
+          color: inherit;
+          font-size: 1.02em;
+          white-space: normal;
+        }
+        .pdf-report .katex-display {
+          margin: 8px 0;
+          overflow: hidden;
+          text-align: left;
+        }
+        .pdf-avoid {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        body.pdf-mode .pdf-report {
+          -webkit-font-smoothing: antialiased;
+          text-rendering: geometricPrecision;
+        }
+
         @media (max-width:640px) {
           .tab-btn { font-size: 0.72rem; padding: 7px 2px; }
         }
       `}</style>
+
+      <div className="pdf-stage" aria-hidden="true">
+        <PDFReport data={data} />
+      </div>
 
       <div className="res-bg relative min-h-screen font-body">
         <div className="res-bg fixed inset-0 -z-10" aria-hidden />

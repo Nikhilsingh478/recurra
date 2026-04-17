@@ -1,0 +1,211 @@
+You are a senior full-stack engineer working on a premium React + TypeScript application called "Recurra".
+
+Your task is to REBUILD the PDF export system using html2canvas + jsPDF so that the exported PDF looks EXACTLY like the UI — clean, aesthetic, and professional.
+
+----------------------------------------
+GOAL
+----------------------------------------
+
+- The PDF must visually match the Results page UI
+- Mathematical expressions (KaTeX) must render perfectly
+- Layout must be clean, centered, and readable
+- Output must feel like a premium SaaS report
+
+----------------------------------------
+CURRENT PROBLEM
+----------------------------------------
+
+- Existing jsPDF text rendering breaks math formatting
+- LaTeX appears as raw text
+- Layout looks unprofessional
+
+----------------------------------------
+SOLUTION APPROACH
+----------------------------------------
+
+We will:
+1. Capture rendered HTML (with KaTeX)
+2. Convert it into a high-resolution canvas
+3. Insert it into a PDF with proper scaling and pagination
+
+----------------------------------------
+STEP 1: INSTALL DEPENDENCIES
+----------------------------------------
+
+npm install html2canvas jspdf
+
+----------------------------------------
+STEP 2: CREATE PDF EXPORT CONTAINER
+----------------------------------------
+
+Wrap the Results page content in a dedicated container:
+
+<div id="pdf-content">
+  ... full results UI ...
+</div>
+
+----------------------------------------
+STEP 3: CREATE PDF MODE (CRITICAL FOR CLEANNESS)
+----------------------------------------
+
+Introduce a "PDF mode" using a CSS class or state:
+
+Example:
+<body class="pdf-mode">
+
+In PDF mode:
+
+- REMOVE animations (Framer Motion, GSAP)
+- REMOVE hover effects
+- HIDE:
+  - buttons
+  - navbars
+  - interactive elements
+- ENSURE:
+  - consistent spacing
+  - no overflow
+  - no scrollbars
+
+----------------------------------------
+STEP 4: OPTIMIZE LAYOUT FOR A4
+----------------------------------------
+
+Inside #pdf-content:
+
+- Set fixed width for A4 rendering:
+
+#pdf-content {
+  width: 800px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+- Ensure:
+  - No horizontal overflow
+  - Text wraps correctly
+  - KaTeX blocks fit container
+
+----------------------------------------
+STEP 5: IMPLEMENT EXPORT FUNCTION
+----------------------------------------
+
+Create function:
+
+const handleExportPDF = async () => {
+  const element = document.getElementById("pdf-content");
+
+  document.body.classList.add("pdf-mode");
+
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  const canvas = await html2canvas(element, {
+    scale: 3,
+    useCORS: true,
+    backgroundColor: "#0b0b0b", // match theme
+    scrollY: -window.scrollY,
+  });
+
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+
+  const imgWidth = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  let heightLeft = imgHeight;
+  let position = 0;
+
+  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save("recurra-analysis.pdf");
+
+  document.body.classList.remove("pdf-mode");
+};
+
+----------------------------------------
+STEP 6: HANDLE MULTI-PAGE CLEANLY
+----------------------------------------
+
+Ensure:
+- No content cut awkwardly
+- Add spacing between sections
+- Avoid elements being split mid-line
+
+(Optional improvement):
+- Add page-break helpers via CSS
+
+----------------------------------------
+STEP 7: IMPROVE VISUAL QUALITY
+----------------------------------------
+
+- Use scale: 2 or 3 (IMPORTANT)
+- Ensure fonts are fully loaded before capture
+- Avoid lazy-loaded images
+- Use high contrast text
+
+----------------------------------------
+STEP 8: ADD PDF-SPECIFIC STYLING
+----------------------------------------
+
+In pdf-mode:
+
+- Increase line-height slightly
+- Improve spacing between sections
+- Ensure headings stand out
+- Remove shadows/glows if they look bad in print
+
+----------------------------------------
+STEP 9: ENSURE KaTeX RENDERS CORRECTLY
+----------------------------------------
+
+- Wait before capture to ensure math is rendered
+- No raw LaTeX should appear
+
+----------------------------------------
+STEP 10: CLEAN USER EXPERIENCE
+----------------------------------------
+
+- Show loading state while generating PDF
+- Disable button during generation
+- Handle errors gracefully
+
+----------------------------------------
+FINAL OUTPUT REQUIREMENT
+----------------------------------------
+
+Provide:
+
+1. Final handleExportPDF function
+2. Required CSS for pdf-mode
+3. Any wrapper changes in Results page
+4. Ensure everything is production-ready
+
+----------------------------------------
+DO NOT
+----------------------------------------
+
+- Do NOT use jsPDF text rendering
+- Do NOT sanitize LaTeX
+- Do NOT change data logic
+- Do NOT overcomplicate
+
+----------------------------------------
+FINAL GOAL
+----------------------------------------
+
+- PDF looks exactly like UI
+- Math is perfectly rendered
+- Layout is clean and premium
+- No broken formatting
+- No visual glitches
