@@ -1,0 +1,146 @@
+You are a senior full-stack engineer working on a React + TypeScript project called "Recurra".
+
+The PDF export system is already structurally correct (sections, layout, spacing), but mathematical content is rendered incorrectly.
+
+----------------------------------------
+CURRENT PROBLEM
+----------------------------------------
+
+- PDF uses jsPDF text rendering (this must be preserved)
+- Math expressions appear as raw LaTeX:
+  Example:
+    $L\left\{\frac{\cos at - \cos bt}{t}\right\}$
+
+- This results in:
+  ❌ unreadable output
+  ❌ ugly formatting
+  ❌ LaTeX tokens visible in PDF
+
+----------------------------------------
+CRITICAL CONSTRAINT
+----------------------------------------
+
+DO NOT:
+- Use html2canvas
+- Convert UI to image
+- Change layout system
+- Remove jsPDF structure
+
+We MUST keep:
+✅ structured PDF (text-based)
+✅ selectable text
+✅ current layout logic
+
+----------------------------------------
+SOLUTION APPROACH
+----------------------------------------
+
+We must CLEAN and TRANSFORM LaTeX into readable plain-text math BEFORE passing to jsPDF.
+
+----------------------------------------
+STEP 1: CREATE sanitizeMathForPDF FUNCTION
+----------------------------------------
+
+Create a utility function:
+
+function sanitizeMathForPDF(input: string): string
+
+This function must:
+
+1. REMOVE math wrappers:
+   - remove $...$
+   - remove $$...$$
+
+2. REPLACE common LaTeX patterns:
+
+   \frac{a}{b} → (a / b)
+   \sqrt{x} → sqrt(x)
+   \left( → (
+   \right) → )
+   \left\{ → {
+   \right\} → }
+   \cdot → *
+   \times → *
+   \sin → sin
+   \cos → cos
+   \tan → tan
+   \log → log
+
+3. HANDLE powers:
+   x^2 → x^2 (keep simple)
+
+4. HANDLE subscripts:
+   x_1 → x1
+
+5. REMOVE unsupported tokens:
+   \, \; \! etc.
+
+6. CLEAN spacing
+
+----------------------------------------
+STEP 2: APPLY SANITIZATION
+----------------------------------------
+
+Before sending ANY text to jsPDF:
+
+Apply:
+
+sanitizeMathForPDF(question)
+sanitizeMathForPDF(solution)
+sanitizeMathForPDF(topics)
+
+----------------------------------------
+STEP 3: KEEP STRUCTURE SAME
+----------------------------------------
+
+DO NOT change:
+- splitTextToSize logic
+- section layout
+- fonts
+- spacing system
+
+ONLY clean content
+
+----------------------------------------
+STEP 4: EDGE CASE HANDLING
+----------------------------------------
+
+Ensure:
+- No empty strings after cleaning
+- No broken brackets
+- No leftover backslashes
+
+----------------------------------------
+STEP 5: TEST CASES
+----------------------------------------
+
+Input:
+$L\left\{\frac{\cos at - \cos bt}{t}\right\}$
+
+Output:
+L{(cos(at) - cos(bt)) / t}
+
+----------------------------------------
+FINAL GOAL
+----------------------------------------
+
+- PDF structure remains EXACTLY SAME
+- Math becomes readable (not LaTeX)
+- No raw symbols like \frac, \left, etc.
+- Clean, professional output
+
+----------------------------------------
+OUTPUT REQUIREMENT
+----------------------------------------
+
+Provide:
+1. sanitizeMathForPDF function (complete code)
+2. Integration points in PDF export logic
+3. Example before/after transformation
+
+DO NOT:
+- Suggest HTML rendering
+- Suggest KaTeX in PDF
+- Change architecture
+
+Only fix math text transformation
