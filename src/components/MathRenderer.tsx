@@ -1,18 +1,9 @@
-import React from "react";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 
-/**
- * MathRenderer
- * - $$...$$ → block math (rendered as InlineMath when `inline` prop is true to stay valid inside <p>/<span>)
- * - $...$   → inline math
- * - everything else → plain text
- */
 interface MathRendererProps {
   content: string;
   className?: string;
-  /** If true, render block math inline (safe inside <p>/<span> parents). Default: false */
-  inline?: boolean;
 }
 
 type Segment =
@@ -20,67 +11,67 @@ type Segment =
   | { type: "inline"; value: string }
   | { type: "block"; value: string };
 
-const parseSegments = (input: string): Segment[] => {
-  if (!input) return [];
-  const out: Segment[] = [];
+const parseSegments = (content: string): Segment[] => {
+  const segments: Segment[] = [];
   const regex = /(\$\$[\s\S]+?\$\$)|(\$[^$\n]+?\$)/g;
-  let last = 0;
-  let m: RegExpExecArray | null;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
 
-  while ((m = regex.exec(input)) !== null) {
-    if (m.index > last) out.push({ type: "text", value: input.slice(last, m.index) });
-    const tok = m[0];
-    if (tok.startsWith("$$")) {
-      out.push({ type: "block", value: tok.slice(2, -2).trim() });
-    } else {
-      out.push({ type: "inline", value: tok.slice(1, -1).trim() });
+  while ((match = regex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: "text",
+        value: content.slice(lastIndex, match.index),
+      });
     }
-    last = m.index + tok.length;
+
+    const token = match[0];
+
+    if (token.startsWith("$$") && token.endsWith("$$")) {
+      segments.push({
+        type: "block",
+        value: token.slice(2, -2).trim(),
+      });
+    } else {
+      segments.push({
+        type: "inline",
+        value: token.slice(1, -1).trim(),
+      });
+    }
+
+    lastIndex = match.index + token.length;
   }
-  if (last < input.length) out.push({ type: "text", value: input.slice(last) });
-  return out;
+
+  if (lastIndex < content.length) {
+    segments.push({
+      type: "text",
+      value: content.slice(lastIndex),
+    });
+  }
+
+  return segments;
 };
 
-const MathRenderer: React.FC<MathRendererProps> = ({ content, className, inline = false }) => {
-  const segments = parseSegments(content ?? "");
+const MathRenderer = ({ content, className }: MathRendererProps) => {
+  const value = content ?? "";
+  const segments = parseSegments(value);
 
-  // No math → plain text
-  if (segments.length === 0 || segments.every((s) => s.type === "text")) {
-    const Tag = inline ? "span" : "div";
-    return <Tag className={className}>{content}</Tag>;
+  if (segments.length === 0 || segments.every((segment) => segment.type === "text")) {
+    return <div className={className}>{value}</div>;
   }
 
-  // Inline mode: everything stays inside a <span>, block math becomes inline math to keep HTML valid
-  if (inline) {
-    return (
-      <span className={className}>
-        {segments.map((seg, i) => {
-          if (seg.type === "text") return <React.Fragment key={i}>{seg.value}</React.Fragment>;
-          if (seg.type === "inline") return <InlineMath key={i} math={seg.value} />;
-          return (
-            <span
-              key={i}
-              style={{ display: "inline-block", verticalAlign: "middle", margin: "0 2px" }}
-            >
-              <InlineMath math={seg.value} />
-            </span>
-          );
-        })}
-      </span>
-    );
-  }
-
-  // Block mode: <div> parent so <BlockMath> (which renders a <div>) is valid HTML
   return (
     <div className={className}>
-      {segments.map((seg, i) => {
-        if (seg.type === "text") return <React.Fragment key={i}>{seg.value}</React.Fragment>;
-        if (seg.type === "inline") return <InlineMath key={i} math={seg.value} />;
-        return (
-          <div key={i} style={{ margin: "8px 0", overflowX: "auto", maxWidth: "100%" }}>
-            <BlockMath math={seg.value} />
-          </div>
-        );
+      {segments.map((segment, index) => {
+        if (segment.type === "text") {
+          return <span key={index}>{segment.value}</span>;
+        }
+
+        if (segment.type === "inline") {
+          return <InlineMath key={index} math={segment.value} />;
+        }
+
+        return <BlockMath key={index} math={segment.value} />;
       })}
     </div>
   );
