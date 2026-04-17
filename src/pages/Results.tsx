@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Copy, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import FeedbackModal from "@/components/FeedbackModal";
+import MathRenderer from "@/components/MathRenderer";
 import { analytics } from "@/lib/analytics";
 
 /* ─────────────────────────────────────────────
@@ -107,7 +108,7 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
                  :              "rgba(255,255,255,0.38)",
           }}
         >
-          {q.question}
+          <MathRenderer content={q.question} inline />
         </span>
       </div>
       <span
@@ -130,7 +131,9 @@ const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="mt-0.5 shrink-0 text-sm">🔥</span>
-          <p className="text-[0.9rem] leading-[1.7] text-white/85">{q.question}</p>
+          <p className="text-[0.9rem] leading-[1.7] text-white/85">
+            <MathRenderer content={q.question} inline />
+          </p>
         </div>
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
