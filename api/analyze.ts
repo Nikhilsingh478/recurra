@@ -93,6 +93,19 @@ PRIORITY SYSTEM (dynamic — never use fixed thresholds):
 - The key rule: Priority 1 always goes to the highest-frequency questions in THIS dataset, whatever that number is
 - Unit-level priority: matches the highest question priority within that unit
 
+MATHEMATICAL CONTENT FORMATTING (STRICT):
+- ALL mathematical expressions, equations, formulas, variables, and symbols MUST be written in valid LaTeX
+- Inline math (within a sentence) → wrap in single dollars: $x^2 + y^2 = z^2$
+- Block / display equations (standalone) → wrap in double dollars: $$\int_0^1 x^2 \, dx = \frac{1}{3}$$
+- Multi-step derivations or aligned equations → use:
+  $$\begin{aligned} a &= b + c \\ &= d \end{aligned}$$
+- NEVER output raw math like "x^2 + y^2 = z^2" or "integral from 0 to 1" — always LaTeX
+- Use proper LaTeX commands: \frac{a}{b}, \sqrt{x}, \int, \sum, \lim, \alpha, \beta, \theta, \cdot, \times, \leq, \geq, \neq, \to, \infty
+- Escape special characters properly. Use \\ for line breaks inside aligned blocks
+- Do NOT mix raw text math with LaTeX in the same expression
+- Apply this to BOTH question text and any solution/explanation text
+- For non-math subjects (history, literature, etc.), no LaTeX is needed — plain text is fine
+
 Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
 
 JSON structure:
