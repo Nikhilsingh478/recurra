@@ -295,11 +295,40 @@ const exportPDF = async (data: RecurraResults) => {
       need(22);
       F(7, 59, 111, 212, true);
       doc.text("HIGH FREQUENCY TOPICS", ML, y); y += 5.5;
-      const tStr   = hfT.join("  |  ");
-      const tLines: string[] = doc.splitTextToSize(tStr, COL);
+
       F(8.5, 50, 58, 78);
-      doc.text(tLines, ML, y);
-      y += tLines.length * (8.5 * 0.352 * 1.25) + 7;
+      // Safety buffer to guarantee no right-edge overflow even with long unbroken tokens
+      const HFT_SAFE_W = COL - 4;
+      const SEP = "  |  ";
+
+      // Greedy pack topics into lines that strictly fit within HFT_SAFE_W
+      const lines: string[] = [];
+      let current = "";
+      hfT.forEach((rawTopic) => {
+        const topic = String(rawTopic ?? "").trim();
+        if (!topic) return;
+
+        // If a single topic is itself too wide, hard-wrap it first
+        const pieces: string[] =
+          doc.getTextWidth(topic) > HFT_SAFE_W
+            ? (doc.splitTextToSize(topic, HFT_SAFE_W) as string[])
+            : [topic];
+
+        pieces.forEach((piece, idx) => {
+          const sep = current && idx === 0 ? SEP : current ? " " : "";
+          const candidate = current ? `${current}${sep}${piece}` : piece;
+          if (doc.getTextWidth(candidate) <= HFT_SAFE_W) {
+            current = candidate;
+          } else {
+            if (current) lines.push(current);
+            current = piece;
+          }
+        });
+      });
+      if (current) lines.push(current);
+
+      doc.text(lines, ML, y);
+      y += lines.length * (8.5 * 0.352 * 1.25) + 7;
     }
 
     /* ── units ── */
