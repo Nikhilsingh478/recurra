@@ -13,3 +13,6 @@
 ## Environment Variables
 - `GEMINI_API_KEY` is required for analysis.
 - Optional fallback keys: `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`.
+
+## PDF Export
+- `src/pages/Results.tsx` keeps jsPDF text rendering and sanitizes LaTeX math into readable plain-text math before writing dynamic content to the PDF.

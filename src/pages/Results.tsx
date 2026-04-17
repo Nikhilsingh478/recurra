@@ -52,6 +52,128 @@ const P = {
 type PKey = keyof typeof P;
 const getP = (key?: number | string) => P[(key as PKey) ?? 3] ?? P[3];
 
+const extractBraced = (value: string, start: number) => {
+  if (value[start] !== "{") return null;
+  let depth = 0;
+  for (let i = start; i < value.length; i++) {
+    if (value[i] === "{") depth++;
+    if (value[i] === "}") depth--;
+    if (depth === 0) {
+      return {
+        content: value.slice(start + 1, i),
+        end: i + 1,
+      };
+    }
+  }
+  return null;
+};
+
+const wrapMathFunctionArgs = (value: string) =>
+  value.replace(/\b(sin|cos|tan|log)\s+([A-Za-z](?:\s*[A-Za-z0-9])?)/g, (_match, fn, arg) =>
+    `${fn}(${String(arg).replace(/\s+/g, "")})`
+  );
+
+const replaceLatexFractions = (input: string): string => {
+  let output = input;
+  let index = output.indexOf("\\frac");
+
+  while (index !== -1) {
+    const numerator = extractBraced(output, index + 5);
+    if (!numerator) break;
+    const denominator = extractBraced(output, numerator.end);
+    if (!denominator) break;
+
+    const cleanNumerator = sanitizeMathForPDF(numerator.content);
+    const cleanDenominator = sanitizeMathForPDF(denominator.content);
+    const hasCompoundNumerator = /[+\-*/]/.test(cleanNumerator);
+    const numeratorText = hasCompoundNumerator ? `(${cleanNumerator})` : cleanNumerator;
+    const fraction = hasCompoundNumerator
+      ? `${numeratorText} / ${cleanDenominator}`
+      : `(${numeratorText} / ${cleanDenominator})`;
+    output = output.slice(0, index) + fraction + output.slice(denominator.end);
+    index = output.indexOf("\\frac", index + fraction.length);
+  }
+
+  return output;
+};
+
+const replaceLatexSquareRoots = (input: string): string => {
+  let output = input;
+  let index = output.indexOf("\\sqrt");
+
+  while (index !== -1) {
+    const radicand = extractBraced(output, index + 5);
+    if (!radicand) break;
+    const replacement = `sqrt(${sanitizeMathForPDF(radicand.content)})`;
+    output = output.slice(0, index) + replacement + output.slice(radicand.end);
+    index = output.indexOf("\\sqrt", index + replacement.length);
+  }
+
+  return output;
+};
+
+const sanitizeMathForPDF = (input: string): string => {
+  if (!input) return "";
+
+  let output = String(input)
+    .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+    .replace(/\$([^$]*?)\$/g, "$1");
+
+  output = replaceLatexFractions(output);
+  output = replaceLatexSquareRoots(output);
+
+  output = output
+    .replace(/\\left\\\{/g, "{")
+    .replace(/\\right\\\}/g, "}")
+    .replace(/\\left\(/g, "(")
+    .replace(/\\right\)/g, ")")
+    .replace(/\\left\[/g, "[")
+    .replace(/\\right\]/g, "]")
+    .replace(/\\left\|/g, "|")
+    .replace(/\\right\|/g, "|")
+    .replace(/\\cdot\b/g, "*")
+    .replace(/\\times\b/g, "*")
+    .replace(/\\sin\b/g, "sin")
+    .replace(/\\cos\b/g, "cos")
+    .replace(/\\tan\b/g, "tan")
+    .replace(/\\log\b/g, "log")
+    .replace(/\\ln\b/g, "ln")
+    .replace(/\\exp\b/g, "exp")
+    .replace(/\\pi\b/g, "pi")
+    .replace(/\\theta\b/g, "theta")
+    .replace(/\\alpha\b/g, "alpha")
+    .replace(/\\beta\b/g, "beta")
+    .replace(/\\gamma\b/g, "gamma")
+    .replace(/\\delta\b/g, "delta")
+    .replace(/\\lambda\b/g, "lambda")
+    .replace(/\\mu\b/g, "mu")
+    .replace(/\\infty\b/g, "infinity")
+    .replace(/\\leq\b/g, "<=")
+    .replace(/\\geq\b/g, ">=")
+    .replace(/\\neq\b/g, "!=")
+    .replace(/\\to\b/g, "->")
+    .replace(/\\,/g, " ")
+    .replace(/\\;/g, " ")
+    .replace(/\\!/g, "")
+    .replace(/\\:/g, " ")
+    .replace(/\\\s/g, " ")
+    .replace(/([A-Za-z0-9)])_\{([^{}]+)\}/g, "$1$2")
+    .replace(/([A-Za-z0-9)])_([A-Za-z0-9])/g, "$1$2")
+    .replace(/\^\{([^{}]+)\}/g, "^$1")
+    .replace(/\\[a-zA-Z]+/g, "")
+    .replace(/\\/g, "");
+
+  output = wrapMathFunctionArgs(output)
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/([({[])\s+/g, "$1")
+    .replace(/\s+([)}\]])/g, "$1")
+    .replace(/\s*([+\-*/=<>])\s*/g, " $1 ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return output || String(input).replace(/\\/g, "").trim();
+};
+
 /* ─────────────────────────────────────────────
    REVEAL HOOK
 ───────────────────────────────────────────── */
@@ -251,7 +373,7 @@ const exportPDF = async (data: RecurraResults) => {
 
     /* ── subject + stats ── */
     F(18, 10, 14, 28, true);
-    const subjLines: string[] = doc.splitTextToSize(data.subject ?? "General", COL);
+    const subjLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(data.subject ?? "General"), COL);
     doc.text(subjLines, ML, y);
     y += subjLines.length * 8 + 2;
 
@@ -275,7 +397,7 @@ const exportPDF = async (data: RecurraResults) => {
     const LH_STRAT    = 9 * 0.352 * 1.65; // ~5.2mm — generous to prevent overflow
 
     const stratW     = COL - STRAT_PAD_X * 2 - 6; // extra 6mm safety so lines wrap before edge
-    const stratLines: string[] = doc.splitTextToSize(data.examStrategy ?? "", stratW);
+    const stratLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(data.examStrategy ?? ""), stratW);
     const stratBodyH = stratLines.length * LH_STRAT;
 
     // label = 5mm from top, gap = 4mm, then text starts at 5+4=9mm from top
@@ -317,7 +439,7 @@ const exportPDF = async (data: RecurraResults) => {
       const lines: string[] = [];
       let current = "";
       hfT.forEach((rawTopic) => {
-        const topic = String(rawTopic ?? "").trim();
+        const topic = sanitizeMathForPDF(String(rawTopic ?? "").trim());
         if (!topic) return;
 
         // If a single topic is itself too wide, hard-wrap it first
@@ -395,14 +517,14 @@ const exportPDF = async (data: RecurraResults) => {
       doc.text(`Rank ${pKey}`, PAGE_W - MR - 3, y + 5, { align: "right" });
 
       F(10, 10, 14, 28, true);
-      const titleLines: string[] = doc.splitTextToSize(u.unitTitle ?? "", COL - 25);
+      const titleLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(u.unitTitle ?? ""), COL - 25);
       doc.text(titleLines[0], ML + 4, y + 13);
       y += HDR_H + 3;
 
       // Topics
       if (u.topTopics?.length > 0) {
         need(10);
-        const topStr = u.topTopics.join("  |  ");
+        const topStr = u.topTopics.map((topic) => sanitizeMathForPDF(topic)).filter(Boolean).join("  |  ");
         F(7.5, 128, 138, 152);
         const tLines: string[] = doc.splitTextToSize(topStr, COL);
         doc.text(tLines, ML, y);
@@ -414,7 +536,7 @@ const exportPDF = async (data: RecurraResults) => {
         const qpKey  = q.priority ?? (q.isHighFrequency ? 1 : 3);
         const numStr = `${qIdx + 1}.`;
 
-        const qLines: string[] = doc.splitTextToSize(q.question, Q_TEXT_W);
+        const qLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(q.question), Q_TEXT_W);
         const rowH = qLines.length * LH_Q + 2;
         need(rowH + 5);
 
@@ -446,7 +568,11 @@ const exportPDF = async (data: RecurraResults) => {
       (data.units?.flatMap(u =>
         (u.probableQuestions ?? [])
           .filter(q => q.frequency >= 2)
-          .map(q => ({ question: q.question, frequency: q.frequency, unit: u.unitTitle }))
+          .map(q => ({
+            question: sanitizeMathForPDF(q.question),
+            frequency: q.frequency,
+            unit: sanitizeMathForPDF(u.unitTitle),
+          }))
       ) ?? []).sort((a, b) => b.frequency - a.frequency);
 
     if (hfQraw.length > 0) {
@@ -460,7 +586,7 @@ const exportPDF = async (data: RecurraResults) => {
       y += 16;
 
       hfQraw.forEach((q, qIdx) => {
-        const qLines: string[] = doc.splitTextToSize(q.question, Q_TEXT_W);
+        const qLines: string[] = doc.splitTextToSize(sanitizeMathForPDF(q.question), Q_TEXT_W);
         const rowH = qLines.length * LH_Q + 2;
         need(rowH + 12);
 
@@ -480,7 +606,7 @@ const exportPDF = async (data: RecurraResults) => {
 
         // Unit name
         F(7.5, 148, 156, 168);
-        doc.text(q.unit ?? "", ML + Q_NUM_W, y);
+        doc.text(sanitizeMathForPDF(q.unit ?? ""), ML + Q_NUM_W, y);
         y += 5.5;
 
         // Separator
@@ -501,7 +627,7 @@ const exportPDF = async (data: RecurraResults) => {
       doc.text(`${i} / ${pc}`, PAGE_W - MR, 292, { align: "right" });
     }
 
-    doc.save(`${(data.subject ?? "recurra").replace(/\s+/g, "_")}_exam_probables.pdf`);
+    doc.save(`${sanitizeMathForPDF(data.subject ?? "recurra").replace(/\s+/g, "_")}_exam_probables.pdf`);
 
   } catch (err) {
     console.error("PDF export failed:", err);
