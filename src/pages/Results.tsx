@@ -103,16 +103,10 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
             <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
           )}
           <div className="min-w-0 flex-1">
-            <div
+            <MathRenderer
+              content={q.question}
               className="text-[0.9rem] leading-[1.7]"
-              style={{
-                color: pKey === 1 ? "rgba(255,255,255,0.88)"
-                     : pKey === 2 ? "rgba(255,255,255,0.62)"
-                     :              "rgba(255,255,255,0.38)",
-              }}
-            >
-              <MathRenderer content={q.question} inline />
-            </div>
+            />
             {q.solution && (
               <div
                 className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-[0.82rem] leading-[1.75] text-white/55"
@@ -146,9 +140,9 @@ const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="mt-0.5 shrink-0 text-sm">🔥</span>
-          <p className="text-[0.9rem] leading-[1.7] text-white/85">
-            <MathRenderer content={q.question} inline />
-          </p>
+          <div className="text-[0.9rem] leading-[1.7] text-white/85">
+            <MathRenderer content={q.question} />
+          </div>
         </div>
         <span
           className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
