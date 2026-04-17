@@ -15,6 +15,7 @@ interface ProbableQuestion {
   frequency: number;
   priority?: 1 | 2 | 3;
   isHighFrequency?: boolean;
+  solution?: string;
 }
 interface Unit {
   unitNumber: number;
@@ -89,34 +90,48 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
   return (
     <div
       ref={ref}
-      className="q-row group flex items-start justify-between gap-5 py-4"
+      className="q-row group py-4"
       style={rs(visible)}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-3.5">
-        {pKey === 1 ? (
-          <span className="mt-0.5 shrink-0 text-sm leading-none">🔥</span>
-        ) : pKey === 2 ? (
-          <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.dot }} />
-        ) : (
-          <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
-        )}
+      <div className="flex items-start justify-between gap-5">
+        <div className="flex min-w-0 flex-1 items-start gap-3.5">
+          {pKey === 1 ? (
+            <span className="mt-0.5 shrink-0 text-sm leading-none">🔥</span>
+          ) : pKey === 2 ? (
+            <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.dot }} />
+          ) : (
+            <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
+          )}
+          <div className="min-w-0 flex-1">
+            <div
+              className="text-[0.9rem] leading-[1.7]"
+              style={{
+                color: pKey === 1 ? "rgba(255,255,255,0.88)"
+                     : pKey === 2 ? "rgba(255,255,255,0.62)"
+                     :              "rgba(255,255,255,0.38)",
+              }}
+            >
+              <MathRenderer content={q.question} inline />
+            </div>
+            {q.solution && (
+              <div
+                className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-[0.82rem] leading-[1.75] text-white/55"
+              >
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
+                  Solution
+                </p>
+                <MathRenderer content={q.solution} />
+              </div>
+            )}
+          </div>
+        </div>
         <span
-          className="text-[0.9rem] leading-[1.7]"
-          style={{
-            color: pKey === 1 ? "rgba(255,255,255,0.88)"
-                 : pKey === 2 ? "rgba(255,255,255,0.62)"
-                 :              "rgba(255,255,255,0.38)",
-          }}
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+          style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
         >
-          <MathRenderer content={q.question} inline />
+          {q.frequency}×
         </span>
       </div>
-      <span
-        className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-        style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
-      >
-        {q.frequency}×
-      </span>
     </div>
   );
 };
