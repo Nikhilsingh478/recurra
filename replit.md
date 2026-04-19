@@ -17,3 +17,4 @@
 ## PDF Export
 - `src/pages/Results.tsx` uses a hidden PDF-only report (`PDFReport`) and `html2pdf.js` so KaTeX math is rendered visually before export.
 - The export keeps the same result sections: cover/header, strategy, high-frequency topics, unit-wise questions, must-prepare list, and footer.
+- The PDF report is explicitly paginated into A4-sized pages to avoid stranded headings, right-side clipping, and large blank gaps from automatic page slicing.

@@ -226,124 +226,213 @@ const waitForPdfRender = async () => {
   await new Promise(resolve => setTimeout(resolve, 350));
 };
 
+const estimateTextRows = (text = "", charsPerRow: number) =>
+  Math.max(1, Math.ceil(String(text).length / charsPerRow));
+
+const estimateTopicRows = (topics: string[] = [], charsPerRow: number) => {
+  if (topics.length === 0) return 0;
+  const units = topics.reduce((sum, topic) => sum + Math.max(1, Math.ceil(String(topic).length / charsPerRow)), 0);
+  return Math.max(1, Math.ceil(units / 2));
+};
+
+const estimateUnitHeight = (unit: Unit) => {
+  const header = 86;
+  const topics = estimateTopicRows(unit.topTopics, 42) * 34;
+  const questions = (unit.probableQuestions ?? []).reduce((sum, q) => {
+    const rows = estimateTextRows(q.question, 92);
+    const solution = q.solution ? 52 + estimateTextRows(q.solution, 96) * 18 : 0;
+    return sum + 42 + rows * 20 + solution;
+  }, 0);
+  return header + topics + questions + 32;
+};
+
+const paginateUnits = (units: Unit[] = []) => {
+  const pages: Unit[][] = [];
+  let current: Unit[] = [];
+  let currentHeight = 64;
+  const maxHeight = 920;
+
+  units.forEach((unit) => {
+    const unitHeight = estimateUnitHeight(unit);
+    if (current.length > 0 && currentHeight + unitHeight > maxHeight) {
+      pages.push(current);
+      current = [];
+      currentHeight = 64;
+    }
+    current.push(unit);
+    currentHeight += unitHeight;
+  });
+
+  if (current.length > 0) pages.push(current);
+  return pages;
+};
+
+const estimateMustPrepareHeight = (question: HFQuestion) =>
+  46 + estimateTextRows(question.question, 98) * 20 + estimateTextRows(question.unit, 120) * 14;
+
+const paginateMustPrepare = (questions: HFQuestion[] = []) => {
+  const pages: HFQuestion[][] = [];
+  let current: HFQuestion[] = [];
+  let currentHeight = 64;
+  const maxHeight = 930;
+
+  questions.forEach((question) => {
+    const height = estimateMustPrepareHeight(question);
+    if (current.length > 0 && currentHeight + height > maxHeight) {
+      pages.push(current);
+      current = [];
+      currentHeight = 64;
+    }
+    current.push(question);
+    currentHeight += height;
+  });
+
+  if (current.length > 0) pages.push(current);
+  return pages;
+};
+
+const PDFPage = ({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) => (
+  <section className={`pdf-page ${compact ? "pdf-page-compact" : ""}`}>
+    {children}
+  </section>
+);
+
 const PDFReport = ({ data }: { data: RecurraResults }) => {
   const hfTopics = data.highFrequencyTopics ?? data.superHighFrequencyTopics ?? [];
   const mustPrepare = getMustPrepare(data);
   const totalQ = data.units?.reduce((a, u) => a + (u.probableQuestions?.length ?? 0), 0) ?? 0;
+  const unitPages = paginateUnits(data.units ?? []);
+  const mustPreparePages = paginateMustPrepare(mustPrepare);
 
   return (
     <article id="pdf-content" className="pdf-report">
-      <header className="pdf-cover pdf-avoid">
-        <div>
-          <p className="pdf-kicker">RECURRA</p>
-          <h1>{data.subject ?? "General"}</h1>
-          <p className="pdf-subtitle">Exam Probables</p>
-        </div>
-        <div className="pdf-meta">
-          <span>{data.totalYearsAnalyzed ?? 0} years analyzed</span>
-          <span>{data.units?.length ?? 0} units</span>
-          <span>{totalQ} questions</span>
-        </div>
-      </header>
+      <PDFPage>
+        <header className="pdf-cover pdf-avoid">
+          <div>
+            <p className="pdf-kicker">RECURRA</p>
+            <h1>{data.subject ?? "General"}</h1>
+            <p className="pdf-subtitle">Exam Probables</p>
+          </div>
+          <div className="pdf-meta">
+            <span>{data.totalYearsAnalyzed ?? 0} years analyzed</span>
+            <span>{data.units?.length ?? 0} units</span>
+            <span>{totalQ} questions</span>
+          </div>
+        </header>
 
-      <section className="pdf-card pdf-avoid">
-        <p className="pdf-label">Exam Strategy</p>
-        <div className="pdf-strategy">
-          <MathRenderer content={data.examStrategy ?? "Review high-frequency topics first."} />
-        </div>
-      </section>
-
-      {hfTopics.length > 0 && (
-        <section className="pdf-section pdf-avoid">
-          <p className="pdf-label">High Frequency Topics</p>
-          <div className="pdf-topic-list">
-            {hfTopics.map((topic, index) => (
-              <span key={`${topic}-${index}`} className="pdf-topic">
-                <MathRenderer content={topic} />
-              </span>
-            ))}
+        <section className="pdf-card pdf-avoid">
+          <p className="pdf-label">Exam Strategy</p>
+          <div className="pdf-strategy">
+            <MathRenderer content={data.examStrategy ?? "Review high-frequency topics first."} />
           </div>
         </section>
-      )}
 
-      <section className="pdf-section">
-        <p className="pdf-label">Unit-wise Probable Questions</p>
-        {data.units?.map((unit) => {
-          const up = getP(unit.unitPriority ?? unit.priority);
-          return (
-            <div key={unit.unitNumber} className="pdf-unit pdf-avoid">
-              <div className="pdf-unit-header">
-                <div>
-                  <p>Unit {unit.unitNumber}</p>
-                  <h2><MathRenderer content={unit.unitTitle ?? ""} /></h2>
-                </div>
-                <span style={{ color: up.color, borderColor: up.border, background: up.bg }}>
-                  {up.label}
+        {hfTopics.length > 0 && (
+          <section className="pdf-section pdf-avoid">
+            <p className="pdf-label">High Frequency Topics</p>
+            <div className="pdf-topic-list">
+              {hfTopics.map((topic, index) => (
+                <span key={`${topic}-${index}`} className="pdf-topic">
+                  <MathRenderer content={topic} />
                 </span>
-              </div>
-
-              {unit.topTopics?.length > 0 && (
-                <div className="pdf-unit-topics">
-                  {unit.topTopics.map((topic, index) => (
-                    <span key={`${topic}-${index}`}>
-                      <MathRenderer content={topic} />
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="pdf-question-list">
-                {unit.probableQuestions?.map((q, index) => {
-                  const qpKey = q.priority ?? (q.isHighFrequency ? 1 : 3);
-                  const qp = getP(qpKey);
-                  return (
-                    <div key={index} className="pdf-question pdf-avoid">
-                      <span className="pdf-question-number" style={{ color: qp.color }}>
-                        {index + 1}.
-                      </span>
-                      <div>
-                        <MathRenderer content={q.question} />
-                        {q.solution && (
-                          <div className="pdf-solution">
-                            <p>Solution</p>
-                            <MathRenderer content={q.solution} />
-                          </div>
-                        )}
-                      </div>
-                      <span className="pdf-frequency" style={{ color: qp.color }}>
-                        {q.frequency}×
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              ))}
             </div>
-          );
-        })}
-      </section>
+          </section>
+        )}
 
-      {mustPrepare.length > 0 && (
-        <section className="pdf-section pdf-avoid">
-          <p className="pdf-label">Must Prepare — High Frequency Questions</p>
-          <div className="pdf-must-list">
-            {mustPrepare.map((q, index) => (
-              <div key={index} className="pdf-must-item pdf-avoid">
-                <span>{index + 1}.</span>
-                <div>
-                  <MathRenderer content={q.question} />
-                  <p>{q.unit}</p>
+        <footer className="pdf-footer">
+          <span>Generated by Recurra</span>
+          <span>{new Date(data.timestamp ?? Date.now()).toLocaleString("en-IN")}</span>
+        </footer>
+      </PDFPage>
+
+      {unitPages.map((pageUnits, pageIndex) => (
+        <PDFPage key={pageIndex} compact>
+          <section className="pdf-section pdf-section-first">
+            <p className="pdf-label">Unit-wise Probable Questions</p>
+            {pageUnits.map((unit) => {
+              const up = getP(unit.unitPriority ?? unit.priority);
+              return (
+                <div key={unit.unitNumber} className="pdf-unit">
+                  <div className="pdf-unit-header">
+                    <div>
+                      <p>Unit {unit.unitNumber}</p>
+                      <h2><MathRenderer content={unit.unitTitle ?? ""} /></h2>
+                    </div>
+                    <span style={{ color: up.color, borderColor: up.border, background: up.bg }}>
+                      {up.label}
+                    </span>
+                  </div>
+
+                  {unit.topTopics?.length > 0 && (
+                    <div className="pdf-unit-topics">
+                      {unit.topTopics.map((topic, index) => (
+                        <span key={`${topic}-${index}`}>
+                          <MathRenderer content={topic} />
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pdf-question-list">
+                    {unit.probableQuestions?.map((q, index) => {
+                      const qpKey = q.priority ?? (q.isHighFrequency ? 1 : 3);
+                      const qp = getP(qpKey);
+                      return (
+                        <div key={index} className="pdf-question pdf-avoid">
+                          <span className="pdf-question-number" style={{ color: qp.color }}>
+                            {index + 1}.
+                          </span>
+                          <div className="pdf-question-text">
+                            <MathRenderer content={q.question} />
+                            {q.solution && (
+                              <div className="pdf-solution">
+                                <p>Solution</p>
+                                <MathRenderer content={q.solution} />
+                              </div>
+                            )}
+                          </div>
+                          <span className="pdf-frequency" style={{ color: qp.color }}>
+                            {q.frequency}×
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <strong>{q.frequency}×</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              );
+            })}
+          </section>
+          <footer className="pdf-footer">
+            <span>Generated by Recurra</span>
+            <span>Page {pageIndex + 2}</span>
+          </footer>
+        </PDFPage>
+      ))}
 
-      <footer className="pdf-footer">
-        <span>Generated by Recurra</span>
-        <span>{new Date(data.timestamp ?? Date.now()).toLocaleString("en-IN")}</span>
-      </footer>
+      {mustPreparePages.map((pageQuestions, pageIndex) => (
+        <PDFPage key={`must-${pageIndex}`} compact>
+          <section className="pdf-section pdf-section-first">
+            <p className="pdf-label">Must Prepare — High Frequency Questions</p>
+            <div className="pdf-must-list">
+              {pageQuestions.map((q, index) => (
+                <div key={`${q.question}-${index}`} className="pdf-must-item pdf-avoid">
+                  <span>{mustPreparePages.slice(0, pageIndex).reduce((sum, page) => sum + page.length, 0) + index + 1}.</span>
+                  <div>
+                    <MathRenderer content={q.question} />
+                    <p>{q.unit}</p>
+                  </div>
+                  <strong>{q.frequency}×</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+          <footer className="pdf-footer">
+            <span>Generated by Recurra</span>
+            <span>{new Date(data.timestamp ?? Date.now()).toLocaleString("en-IN")}</span>
+          </footer>
+        </PDFPage>
+      ))}
     </article>
   );
 };
@@ -367,17 +456,18 @@ const exportPDF = async (data: RecurraResults) => {
         filename: getExportFileName(data.subject),
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
-          scale: 2.6,
+          scale: 2.4,
           useCORS: true,
           backgroundColor: "#050810",
           scrollX: 0,
           scrollY: 0,
-          windowWidth: 860,
+          windowWidth: 794,
           logging: false,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
         pagebreak: {
           mode: ["css", "legacy"],
+          before: ".pdf-page:not(:first-child)",
           avoid: [".pdf-avoid", ".katex-display", ".pdf-question", ".pdf-must-item"],
         },
       })
@@ -676,24 +766,41 @@ const Results = () => {
           position: fixed;
           left: -12000px;
           top: 0;
-          width: 860px;
+          width: 794px;
           min-height: 100vh;
           pointer-events: none;
           z-index: -1;
           background: #050810;
         }
         .pdf-report {
-          width: 860px;
-          min-height: 1216px;
-          padding: 44px 48px 36px;
+          width: 794px;
           color: rgba(255,255,255,0.84);
+          background: #050810;
+          font-family: inherit;
+          line-height: 1.58;
+          overflow: visible;
+        }
+        .pdf-page {
+          position: relative;
+          width: 794px;
+          min-height: 1123px;
+          padding: 46px 42px 38px;
           background:
             radial-gradient(ellipse 70% 34% at 8% 2%, rgba(59,111,212,0.18), transparent 62%),
             radial-gradient(ellipse 55% 36% at 95% 100%, rgba(245,158,11,0.09), transparent 62%),
             #050810;
-          font-family: inherit;
-          line-height: 1.65;
+          display: flex;
+          flex-direction: column;
           overflow: hidden;
+          page-break-after: always;
+          break-after: page;
+        }
+        .pdf-page:last-child {
+          page-break-after: auto;
+          break-after: auto;
+        }
+        .pdf-page-compact {
+          padding-top: 38px;
         }
         .pdf-report * {
           box-sizing: border-box;
@@ -749,6 +856,9 @@ const Results = () => {
         .pdf-card, .pdf-section {
           margin-top: 26px;
         }
+        .pdf-section-first {
+          margin-top: 0;
+        }
         .pdf-card {
           padding: 24px 28px;
           border: 1px solid rgba(59,111,212,0.22);
@@ -766,21 +876,35 @@ const Results = () => {
           flex-wrap: wrap;
           gap: 8px;
           margin-top: 14px;
+          align-items: center;
         }
         .pdf-topic, .pdf-unit-topics span {
           display: inline-flex;
+          align-items: center;
+          justify-content: center;
           max-width: 100%;
-          padding: 6px 12px;
+          min-height: 29px;
+          padding: 6px 13px;
           border-radius: 999px;
           border: 1px solid rgba(245,158,11,0.16);
           background: rgba(245,158,11,0.07);
           color: rgb(251,191,36);
-          font-size: 12px;
-          line-height: 1.45;
+          font-size: 11px;
+          line-height: 1.3;
+          text-align: center;
+          overflow-wrap: anywhere;
+          white-space: normal;
+        }
+        .pdf-topic > div, .pdf-unit-topics span > div {
+          display: inline;
+          line-height: inherit;
+        }
+        .pdf-topic .katex, .pdf-unit-topics .katex {
+          line-height: 1;
         }
         .pdf-unit {
-          margin-top: 20px;
-          padding: 22px 24px;
+          margin-top: 18px;
+          padding: 20px 23px;
           border: 1px solid rgba(255,255,255,0.065);
           border-radius: 20px;
           background: rgba(255,255,255,0.022);
@@ -826,12 +950,18 @@ const Results = () => {
         }
         .pdf-question {
           display: grid;
-          grid-template-columns: 26px 1fr 42px;
+          grid-template-columns: 26px minmax(0, 1fr) 42px;
           gap: 10px;
-          padding: 14px 0;
+          padding: 13px 0;
           border-bottom: 1px solid rgba(255,255,255,0.045);
           color: rgba(255,255,255,0.76);
           font-size: 13px;
+          overflow: hidden;
+        }
+        .pdf-question-text {
+          min-width: 0;
+          overflow-wrap: anywhere;
+          word-break: normal;
         }
         .pdf-question-number, .pdf-frequency {
           font-weight: 800;
@@ -884,7 +1014,7 @@ const Results = () => {
         .pdf-footer {
           display: flex;
           justify-content: space-between;
-          margin-top: 30px;
+          margin-top: auto;
           padding-top: 16px;
           border-top: 1px solid rgba(255,255,255,0.08);
           color: rgba(255,255,255,0.28);
@@ -894,11 +1024,20 @@ const Results = () => {
           color: inherit;
           font-size: 1.02em;
           white-space: normal;
+          max-width: 100%;
         }
         .pdf-report .katex-display {
           margin: 8px 0;
           overflow: hidden;
           text-align: left;
+          max-width: 100%;
+        }
+        .pdf-report .katex-display > .katex {
+          max-width: 100%;
+          overflow: hidden;
+        }
+        .pdf-report .katex-html {
+          max-width: 100%;
         }
         .pdf-avoid {
           break-inside: avoid;
