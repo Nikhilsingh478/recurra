@@ -51,6 +51,7 @@ Recurra is packed with advanced engineering and state-of-the-art UX to ensure th
 ### 🎨 4. Cinematic & Immersive UX
 - **Canvas 2D + Framer Motion + GSAP**: Unparalleled front-end animations. Expect parallax scrolling, immersive reveal animations, and glassmorphism elements.
 - **Lenis Smooth Scroll**: For buttery-smooth page navigation that feels native.
+
 - **Interactive Analysis Loader**: A cinematic, full-screen loading sequence with real-time text scramble effects while the AI computes the results.
 
 ### 📄 5. Seamless Export & SEO
