@@ -437,45 +437,26 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
   );
 };
 
-const exportPDF = async (data: RecurraResults) => {
-  const element = document.getElementById("pdf-content");
-  if (!element) {
-    throw new Error("PDF content is not ready");
-  }
+const exportPDF = async (data: RecurraResults): Promise<void> => {
+  const filename = getExportFileName(data.subject);
 
-  document.body.classList.add("pdf-mode");
+  await waitForPdfRender();
 
-  try {
-    await waitForPdfRender();
-    const html2pdfModule = await import("html2pdf.js");
-    const html2pdf = html2pdfModule.default ?? html2pdfModule;
+  return new Promise<void>((resolve) => {
+    const afterPrint = () => {
+      window.removeEventListener("afterprint", afterPrint);
+      resolve();
+    };
+    window.addEventListener("afterprint", afterPrint, { once: true });
 
-    await html2pdf()
-      .set({
-        margin: 0,
-        filename: getExportFileName(data.subject),
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2.4,
-          useCORS: true,
-          backgroundColor: "#050810",
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 794,
-          logging: false,
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
-        pagebreak: {
-          mode: ["css", "legacy"],
-          before: ".pdf-page:not(:first-child)",
-          avoid: [".pdf-avoid", ".katex-display", ".pdf-question", ".pdf-must-item"],
-        },
-      })
-      .from(element)
-      .save();
-  } finally {
-    document.body.classList.remove("pdf-mode");
-  }
+    document.title = filename.replace(".pdf", "");
+    window.print();
+
+    setTimeout(() => {
+      window.removeEventListener("afterprint", afterPrint);
+      resolve();
+    }, 10000);
+  });
 };
 
 /* ─────────────────────────────────────────────
@@ -518,13 +499,14 @@ const Results = () => {
   const handleExport = async () => {
     if (!data || exporting) return;
     setExporting(true);
+    analytics.pdfExported();
+    const originalTitle = document.title;
     try {
-      analytics.pdfExported();
       await exportPDF(data);
     } catch (err) {
       console.error("PDF export failed:", err);
-      alert("PDF export failed. Please try again in a moment.");
     } finally {
+      document.title = originalTitle;
       setExporting(false);
     }
   };
@@ -764,13 +746,70 @@ const Results = () => {
 
         .pdf-stage {
           position: fixed;
-          left: -12000px;
+          left: -9999px;
           top: 0;
           width: 794px;
           min-height: 100vh;
           pointer-events: none;
           z-index: -1;
           background: #050810;
+        }
+
+        @media print {
+          *, *::before, *::after {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page {
+            margin: 0;
+            size: A4 portrait;
+          }
+          body {
+            visibility: hidden !important;
+            background: #050810 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .pdf-stage {
+            visibility: visible !important;
+            position: static !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            z-index: auto !important;
+            pointer-events: auto !important;
+          }
+          .pdf-stage * {
+            visibility: visible !important;
+          }
+          .pdf-page {
+            page-break-after: always !important;
+            break-after: page !important;
+            overflow: visible !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            box-sizing: border-box !important;
+          }
+          .pdf-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          .pdf-avoid {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .pdf-question {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .pdf-must-item {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .pdf-unit {
+            break-inside: avoid !important;
+          }
         }
         .pdf-report {
           width: 794px;
@@ -1043,11 +1082,6 @@ const Results = () => {
           break-inside: avoid;
           page-break-inside: avoid;
         }
-        body.pdf-mode .pdf-report {
-          -webkit-font-smoothing: antialiased;
-          text-rendering: geometricPrecision;
-        }
-
         @media (max-width:640px) {
           .tab-btn { font-size: 0.72rem; padding: 7px 2px; }
         }
