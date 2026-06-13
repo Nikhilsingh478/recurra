@@ -1,0 +1,404 @@
+MATHEMATICAL CONTENT FORMATTING (STRICT):
+- ALL mathematical expressions MUST be written in valid LaTeX
+- Inline math → single dollars: $x^2 + y^2$
+- Block equations → double dollars: $$\frac{a}{b}$$
+- NEVER output raw math — always LaTeX
+- For non-math subjects, plain text is fine
+
+Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no preamble.
+
+JSON structure:
+{
+  "subject": "detected subject name",
+  "totalYearsAnalyzed": <number>,
+  "units": [
+    {
+      "unitNumber": 1,
+      "unitTitle": "exact unit title from syllabus",
+      "unitPriority": 1 | 2 | 3,
+      "probableQuestions": [
+        {
+          "question": "concise question text",
+          "frequency": <number>,
+          "priority": 1 | 2 | 3,
+          "difficulty": "Easy" | "Medium" | "Hard",
+          "roi": "Very High" | "High" | "Medium" | "Low"
+        }
+      ],
+      "topTopics": ["topic1", "topic2", "topic3"]
+    }
+  ],
+  "examStrategy": "2-3 sentence focused strategy tip based on actual patterns found",
+  "skipStrategy": {
+    "skipRecommended": <unit number>,
+    "skipReason": "one sentence",
+    "skipAlternative": <unit number>,
+    "mustNotSkip": [<unit numbers>]
+  },
+  "numericalSurvivalKit": [
+    {
+      "topic": "specific numerical type",
+      "unit": "unit title",
+      "whyItMatters": "one line"
+    }
+  ],
+  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
+  "highFrequencyQuestions": [
+    {
+      "question": "question text",
+      "frequency": <number>,
+      "unit": "unit title",
+      "difficulty": "Easy" | "Medium" | "Hard",
+      "roi": "Very High" | "High" | "Medium" | "Low"
+    }
+  ]
+}
+
+For highFrequencyQuestions: include Priority 1 and Priority 2 questions only, sorted by frequency descending.
+For highFrequencyTopics: topics appearing across multiple units or multiple years.
+
+SYLLABUS:
+{{SYLLABUS}}
+
+PREVIOUS YEAR PAPERS:
+{{PAPERS}}
+
+CHANGE 3 — Update TypeScript interfaces in src/pages/Results.tsx
+Find the interfaces section at the top of Results.tsx. Update these interfaces:
+Update ProbableQuestion interface — add two new fields:
+typescriptinterface ProbableQuestion {
+  question: string;
+  frequency: number;
+  priority?: 1 | 2 | 3;
+  isHighFrequency?: boolean;
+  solution?: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  roi?: "Very High" | "High" | "Medium" | "Low";
+}
+Update HFQuestion interface — add two new fields:
+typescriptinterface HFQuestion {
+  question: string;
+  frequency: number;
+  unit: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  roi?: "Very High" | "High" | "Medium" | "Low";
+}
+Add two new interfaces after the existing ones:
+typescriptinterface SkipStrategy {
+  skipRecommended: number;
+  skipReason: string;
+  skipAlternative: number;
+  mustNotSkip: number[];
+}
+
+interface NumericalKit {
+  topic: string;
+  unit: string;
+  whyItMatters: string;
+}
+Update RecurraResults interface — add new fields:
+typescriptinterface RecurraResults {
+  subject: string;
+  totalYearsAnalyzed: number;
+  units: Unit[];
+  examStrategy: string;
+  skipStrategy?: SkipStrategy;
+  numericalSurvivalKit?: NumericalKit[];
+  highFrequencyTopics?: string[];
+  highFrequencyQuestions?: HFQuestion[];
+  superHighFrequencyTopics?: string[];
+  timestamp?: string;
+}
+
+CHANGE 4 — Add difficulty and ROI badge rendering in Results.tsx
+Find the style block inside Results.tsx (the large <style> tag). Add these new CSS rules at the end of the existing styles, before the closing backtick:
+css/* ── Difficulty badge ── */
+.badge-easy   { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2);  color: rgb(134,239,172); }
+.badge-medium { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: rgb(252,211,77); }
+.badge-hard   { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2);  color: rgb(252,165,165); }
+
+/* ── ROI badge ── */
+.badge-roi-vh { background: rgba(59,111,212,0.1);  border: 1px solid rgba(59,111,212,0.25); color: rgb(147,180,248); }
+.badge-roi-h  { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+.badge-roi-m  { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); color: rgba(255,255,255,0.3); }
+.badge-roi-l  { background: rgba(239,68,68,0.05);  border: 1px solid rgba(239,68,68,0.1);  color: rgba(252,165,165,0.5); }
+
+/* ── Skip strategy card ── */
+.skip-card {
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.12);
+  border-left: 3px solid rgba(245,158,11,0.6);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.skip-card-safe {
+  background: rgba(34,197,94,0.04);
+  border: 1px solid rgba(34,197,94,0.1);
+  border-left: 3px solid rgba(34,197,94,0.5);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.must-not-skip-pill {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.18);
+  color: rgb(252,165,165);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Numerical kit card ── */
+.kit-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transition: background 0.18s, border-color 0.18s, transform 0.22s cubic-bezier(0.22,1,0.36,1);
+  will-change: transform;
+}
+.kit-card:hover {
+  background: rgba(59,111,212,0.04);
+  border-color: rgba(59,111,212,0.15);
+  transform: translate3d(0,-1px,0);
+}
+.kit-number {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(59,111,212,0.12);
+  border: 1px solid rgba(59,111,212,0.28);
+  color: rgb(147,180,248);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+CHANGE 5 — Update QuestionRow component in Results.tsx
+Find the QuestionRow component. Replace the entire component with this updated version that shows difficulty and ROI badges:
+tsxconst getDifficultyClass = (d?: string) => {
+  if (d === "Easy")   return "badge-easy";
+  if (d === "Medium") return "badge-medium";
+  if (d === "Hard")   return "badge-hard";
+  return "";
+};
+
+const getRoiClass = (r?: string) => {
+  if (r === "Very High") return "badge-roi-vh";
+  if (r === "High")      return "badge-roi-h";
+  if (r === "Medium")    return "badge-roi-m";
+  if (r === "Low")       return "badge-roi-l";
+  return "";
+};
+
+const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
+  const { ref, visible } = useReveal(index * 45);
+  const pKey = q.priority ?? (q.isHighFrequency ? 1 : 3);
+  const p = getP(pKey);
+
+  return (
+    <div ref={ref} className="q-row group py-4" style={rs(visible)}>
+      <div className="flex items-start justify-between gap-5">
+        <div className="flex min-w-0 flex-1 items-start gap-3.5">
+          {pKey === 1 ? (
+            <span className="mt-0.5 shrink-0 text-sm leading-none">🔥</span>
+          ) : pKey === 2 ? (
+            <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.dot }} />
+          ) : (
+            <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
+          )}
+          <div className="min-w-0 flex-1">
+            <MathRenderer content={q.question} className="text-[0.9rem] leading-[1.7]" />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {q.difficulty && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
+                  {q.difficulty}
+                </span>
+              )}
+              {q.roi && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getRoiClass(q.roi)}`}>
+                  {q.roi} ROI
+                </span>
+              )}
+            </div>
+            {q.solution && (
+              <div className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-[0.82rem] leading-[1.75] text-white/55">
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Solution</p>
+                <MathRenderer content={q.solution} />
+              </div>
+            )}
+          </div>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+          style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
+        >
+          {q.frequency}×
+        </span>
+      </div>
+    </div>
+  );
+};
+
+CHANGE 6 — Add new "Skip" tab to the tabs array in Results.tsx
+Find this line in the Results component:
+typescriptconst TABS = [
+  { key: "units"    as const, label: "Unit-wise" },
+  { key: "strategy" as const, label: "Strategy" },
+  { key: "topics"   as const, label: "Topics" },
+  { key: "hf"       as const, label: "Must Prepare", count: mustPrepare.length },
+];
+Replace with:
+typescriptconst TABS = [
+  { key: "units"    as const, label: "Unit-wise" },
+  { key: "strategy" as const, label: "Strategy" },
+  { key: "skip"     as const, label: "Skip Plan" },
+  { key: "hf"       as const, label: "Must Prepare", count: mustPrepare.length },
+];
+Also update the activeTab state type. Find:
+typescriptconst [activeTab, setActiveTab] = useState<"units" | "strategy" | "topics" | "hf">("units");
+Replace with:
+typescriptconst [activeTab, setActiveTab] = useState<"units" | "strategy" | "skip" | "hf">("units");
+
+CHANGE 7 — Add the Skip Plan tab content in Results.tsx
+Find the topics tab section — it starts with:
+tsx{/* ════ TOPICS ════ */}
+{mounted && activeTab === "topics" && (
+Replace the entire topics tab block with this new Skip Plan tab block (topics tab is being replaced since it's the lowest-value tab and we need the space):
+tsx{/* ════ SKIP PLAN ════ */}
+{mounted && activeTab === "skip" && (
+  <div className="b-rev bd3">
+    <p className="sec-lbl">Unit Skip Strategy</p>
+
+    {data.skipStrategy ? (
+      <>
+        <div className="skip-card mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-base">⚡</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
+              Recommended Skip
+            </span>
+          </div>
+          <p className="text-[1rem] font-semibold text-white/85 mb-2">
+            Unit {data.skipStrategy.skipRecommended}
+          </p>
+          <p className="text-[0.88rem] text-white/45 leading-relaxed">
+            {data.skipStrategy.skipReason}
+          </p>
+        </div>
+
+        <div className="skip-card-safe mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-base">✓</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-green-400/70">
+              Alternative Skip
+            </span>
+          </div>
+          <p className="text-[0.88rem] text-white/45 leading-relaxed">
+            If you've already prepared Unit {data.skipStrategy.skipRecommended}, skip Unit {data.skipStrategy.skipAlternative} instead.
+          </p>
+        </div>
+
+        {data.skipStrategy.mustNotSkip?.length > 0 && (
+          <div className="mb-10">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/20">
+              Never Skip These
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {data.skipStrategy.mustNotSkip.map(u => (
+                <span key={u} className="must-not-skip-pill">Unit {u}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.numericalSurvivalKit?.length > 0 && (
+          <>
+            <p className="sec-lbl mt-10">Numerical Survival Kit</p>
+            <p className="mb-6 text-[0.88rem] text-white/30 leading-relaxed">
+              Practice exactly these before the exam. Everything else is theory.
+            </p>
+            <div className="space-y-3">
+              {data.numericalSurvivalKit.map((item, i) => (
+                <div key={i} className="kit-card">
+                  <span className="kit-number">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.9rem] font-medium text-white/80 mb-1">
+                      {item.topic}
+                    </p>
+                    <p className="text-[11px] text-white/28 mb-1.5">{item.unit}</p>
+                    <p className="text-[11px] text-white/40 leading-relaxed">
+                      {item.whyItMatters}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </>
+    ) : (
+      <p className="text-[0.9rem] text-white/28">
+        Skip strategy not available — add more years of papers for better analysis.
+      </p>
+    )}
+  </div>
+)}
+
+CHANGE 8 — Update the Must Prepare tab to show difficulty and ROI badges on HFCard
+Find the HFCard component and replace it entirely with:
+tsxconst HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
+  const { ref, visible } = useReveal(index * 50);
+  return (
+    <div ref={ref} className="hfq-card" style={rs(visible)}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="mt-0.5 shrink-0 text-sm">🔥</span>
+          <div className="text-[0.9rem] leading-[1.7] text-white/85">
+            <MathRenderer content={q.question} />
+          </div>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+          style={{ background:"rgba(245,158,11,0.09)", border:"1px solid rgba(245,158,11,0.22)", color:"rgb(251,191,36)" }}
+        >
+          {q.frequency}×
+        </span>
+      </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        <p className="text-[11px] text-white/28">{q.unit}</p>
+        {q.difficulty && (
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
+            {q.difficulty}
+          </span>
+        )}
+        {q.roi && (
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getRoiClass(q.roi)}`}>
+            {q.roi} ROI
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+CHANGE 9 — Update the tab grid to handle 4 tabs properly
+Find this CSS in the style block:
+css.tab-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+This stays the same since we still have 4 tabs. No change needed here.
+
+FINAL CHECKS after making all changes:
+
+Make sure getDifficultyClass and getRoiClass helper functions are defined BEFORE QuestionRow component — they're used inside it
+Make sure TypeScript compiles without errors — run npm run build to verify
+Make sure the activeTab type union includes "skip" everywhere it appears in the file
+Do not change anything in Analyze.tsx — no changes needed there
+Do not change rate limiting, key rotation logic, or CORS headers in api/analyze.ts
+Do not touch any other files in the project

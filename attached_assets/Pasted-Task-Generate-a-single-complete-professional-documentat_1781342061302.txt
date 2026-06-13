@@ -1,0 +1,264 @@
+Task: Generate a single, complete, professional documentation file for the Recurra project. Write it as a markdown file at docs/DOCUMENTATION.md. Do not modify any existing project files. Only create this one new file.
+Before writing anything, read every file in the project thoroughly:
+
+api/analyze.ts
+src/pages/Analyze.tsx
+src/pages/Results.tsx
+src/pages/Index.tsx
+src/pages/Features.tsx
+src/pages/Process.tsx
+src/pages/Docs.tsx
+src/components/Navbar.tsx
+src/components/AnalysisLoader.tsx
+src/components/FeedbackModal.tsx
+src/components/MathRenderer.tsx
+src/App.tsx
+src/main.tsx
+src/lib/analytics.ts
+vite.config.ts
+tailwind.config.ts
+vercel.json
+package.json
+
+Then write the documentation exactly as specified below. Every section must be fully written — no placeholders, no "TBD", no "see code".
+
+DOCUMENTATION STRUCTURE
+The file must contain exactly these sections in this order:
+
+Section 1 — Project Overview
+Write 3-4 paragraphs covering:
+
+What Recurra is and what problem it solves
+Who the target user is (university students preparing for exams)
+The core value proposition: paste syllabus + PYQs → get ranked probable questions
+What makes it different from just asking ChatGPT (syllabus-bounded, frequency-ranked, skip strategy, numerical kit, PDF export)
+
+
+Section 2 — Live Product
+
+Production URL: https://recurraio.vercel.app
+GitHub repository link
+Tech stack summary in a clean table with columns: Layer, Technology, Purpose
+
+
+Section 3 — Architecture Overview
+Write a clear prose explanation of the full system architecture:
+
+Frontend: React SPA, client-side routing, localStorage for result persistence
+Backend: Single Vercel serverless function at /api/analyze
+AI layer: Google Gemini API with multi-key rotation fallback
+Data flow: User input → frontend validation → POST to /api/analyze → Gemini prompt construction → JSON response → localStorage → Results page render
+
+Then describe the folder structure in a code block showing every meaningful file and what it does. Like this format:
+recurra/
+├── api/
+│   └── analyze.ts          # Vercel serverless endpoint — rate limiting, Gemini key rotation, prompt construction
+├── src/
+│   ├── components/
+│   │   ├── Navbar.tsx       # ...
+│   │   ├── ...
+│   ├── pages/
+│   │   ├── Index.tsx        # ...
+│   │   ├── ...
+│   ├── lib/
+│   │   └── analytics.ts     # ...
+│   ├── App.tsx              # ...
+│   └── main.tsx             # ...
+├── vercel.json              # ...
+├── vite.config.ts           # ...
+└── package.json             # ...
+
+Section 4 — Core Feature: AI Analysis Engine
+This is the most important section. Write it in full detail covering:
+4.1 — How the prompt works
+Explain the ANALYSIS_PROMPT in api/analyze.ts in plain English. Cover:
+
+Syllabus-bounded filtering (why out-of-syllabus questions are dropped)
+Dynamic priority system (explain the relative frequency ranking logic — not fixed thresholds)
+Difficulty classification (Easy / Medium / Hard — what each means and how it's assigned)
+ROI classification (Very High / High / Medium / Low — the formula: marks potential × recurrence ÷ effort)
+Skip strategy generation (how it determines which unit to skip)
+Numerical survival kit (what it is and why it matters)
+Mathematical LaTeX formatting rules
+
+4.2 — Gemini API call structure
+Show the exact fetch call structure. Explain:
+
+Model used and why (gemini-2.5-pro — better structured reasoning than Flash for this task)
+temperature: 0 — why deterministic output is critical for exam analysis
+maxOutputTokens: 20000 — why the limit is high
+Response extraction path: data.candidates[0].content.parts[0].text
+
+4.3 — Multi-key rotation
+Explain the GEMINI_KEYS array and the callGemini() function logic:
+
+Why multiple keys are needed (rate limiting on free tier)
+How 429 and 403 trigger key rotation
+How ALL_KEYS_EXHAUSTED error is surfaced to the user
+
+4.4 — JSON output schema
+Document every field in the response JSON with type, description, and example value. Present as a table with columns: Field, Type, Description, Example.
+
+Section 5 — Rate Limiting System
+Explain in detail:
+
+10 analyses per IP per day
+How IP is extracted from x-forwarded-for header (Vercel proxy-aware)
+In-memory Map storage — what this means (resets on cold start, not persistent across instances)
+IST midnight reset logic — why IST specifically (Indian student user base)
+Limitation: IP-based rate limiting is bypassable via VPN — acknowledge this honestly
+
+
+Section 6 — Frontend: Analyze Page
+Document src/pages/Analyze.tsx covering:
+
+Two-step input flow (syllabus textarea + papers textarea)
+Client-side validation before API call (minimum word count, minimum character count)
+Shake animation on invalid input
+Progress bar and rotating loading messages during analysis
+How results are stored: localStorage.setItem("recurra_results", JSON.stringify(result))
+Navigation to /results on success
+
+
+Section 7 — Frontend: Results Page
+Document src/pages/Results.tsx covering:
+7.1 — Tab structure
+Explain all 4 tabs:
+
+Unit-wise: full question list per unit with priority, difficulty, ROI badges
+Strategy: exam strategy text + unit priority summary cards
+Skip Plan: recommended skip unit, alternative skip, must-not-skip units, numerical survival kit
+Must Prepare: consolidated high-frequency questions across all units with difficulty and ROI
+
+7.2 — Priority rendering
+Explain the P map — how priority 1/2/3 maps to visual styles (amber/blue/gray), dot indicators, and flame emoji
+7.3 — Difficulty and ROI badges
+Explain the color coding:
+
+Easy = green, Medium = amber, Hard = red
+Very High ROI = blue, High = white/muted, Medium = dim, Low = red-tinted
+
+7.4 — PDF export
+Explain the window.print() approach:
+
+PDFReport component renders off-screen at position: fixed; left: -9999px
+On export, body { visibility: hidden } and .pdf-stage { visibility: visible } via @media print
+Pages are 210mm × 297mm A4 with page-break-after: always
+paginateUnits() and paginateMustPrepare() estimate content height to avoid mid-content page breaks
+
+7.5 — Copy to clipboard
+Explain the copyResults() function — plain text format with unit headers and question list
+7.6 — Scroll reveal animations
+Explain the useReveal() hook — IntersectionObserver with staggered delays, blur+translate reveal effect
+
+Section 8 — Routing
+Document every route as a table with columns: Path, Component, Description, Access
+
+Section 9 — Analytics
+Document src/lib/analytics.ts:
+
+What events are tracked (analysis started, completed, failed, PDF exported, results copied, tab switched)
+GA4 integration
+Why analytics matter for a student tool (understanding drop-off, most used features)
+
+
+Section 10 — SEO and Meta
+Document the SEO setup:
+
+react-helmet-async for per-page meta tags
+Canonical URLs on every page
+robots.txt and sitemap via vite-plugin-sitemap
+JSON-LD structured data (WebApplication schema)
+OG image and description for social sharing
+
+
+Section 11 — Environment Variables
+Document every environment variable as a table with columns: Variable, Required, Description, Example
+GEMINI_API_KEY     | Required  | Primary Gemini API key             | AIza...
+GEMINI_API_KEY_1   | Optional  | First fallback key                 | AIza...
+GEMINI_API_KEY_2   | Optional  | Second fallback key                | AIza...
+GEMINI_API_KEY_3   | Optional  | Third fallback key                 | AIza...
+Explain that only GEMINI_API_KEY is strictly required. The fallback keys are for high-traffic scenarios.
+
+Section 12 — Local Development Setup
+Write exact step-by-step instructions:
+bash# 1. Clone the repository
+git clone https://github.com/Nikhilsingh478/recurra.git
+cd recurra
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+cp .env.example .env
+# Then add your GEMINI_API_KEY to .env
+
+# 4. Start development server
+npm run dev
+# App runs at http://localhost:8080
+
+# 5. Test the API endpoint locally
+# Vercel CLI is needed for serverless functions
+npm install -g vercel
+vercel dev
+Note the distinction: npm run dev runs the frontend only. vercel dev runs both frontend and the serverless /api/analyze endpoint locally.
+
+Section 13 — Deployment
+Document the Vercel deployment process:
+
+Zero-config deployment via vercel.json
+Required environment variables to set in Vercel Dashboard
+vercel.json rewrites — what they do and why
+Build command and output directory
+Note: serverless functions are auto-detected from /api directory
+
+
+Section 14 — Known Limitations
+Be honest. Document these exactly:
+
+Rate limit bypassable — IP-based limiting is not foolproof. A VPN bypasses it trivially.
+In-memory rate limiting — The Map resets on serverless cold starts. Under high traffic with multiple instances, limits may not be enforced consistently. A Redis-backed store would fix this.
+Frequency count accuracy — Gemini may slightly miscount frequencies across many papers. The dynamic priority system compensates for minor inaccuracies, but exact counts are not guaranteed.
+localStorage dependency — Results are stored in localStorage. Clearing browser storage or switching devices loses the results. No server-side persistence.
+Free tier Gemini limits — On the free tier, gemini-2.5-pro is limited to 50 requests per day across all keys. Heavy usage requires a paid API plan.
+PDF rendering accuracy — The paginateUnits() height estimation is approximate. Long questions with LaTeX may occasionally cause minor page overflow.
+
+
+Section 15 — Future Improvements
+Document these potential improvements:
+
+Redis-backed rate limiting for consistent enforcement across serverless instances
+Server-side result storage so users can access results across devices
+Direct PDF file generation via jsPDF or Puppeteer instead of window.print() for more reliable pagination
+Support for PDF/image upload of question papers instead of text paste only
+Subject-specific analysis modes with pre-tuned prompts for engineering, medical, law exams
+User accounts so students can save and revisit analyses over time
+Shareable result links so students can share their probable question list with classmates
+
+
+Section 16 — Contributing
+Write a brief contributing guide:
+
+Fork → feature branch → conventional commits → pull request
+Branch naming: feat/, fix/, docs/, chore/
+The most impactful area to contribute: prompt engineering in api/analyze.ts
+Run npm run build before submitting PR to confirm no TypeScript errors
+
+
+Section 17 — License
+State: Proprietary. All rights reserved. User-provided syllabi and question papers are not stored or persisted beyond the analysis request.
+
+FORMATTING RULES FOR THE DOCUMENTATION FILE
+
+Use # for section titles, ## for subsections, ### for sub-subsections
+All code snippets must use properly labeled fenced code blocks (```typescript, ```bash, ```json etc.)
+Tables must use proper markdown table syntax with header row and separator row
+No filler phrases like "As mentioned above" or "It is worth noting"
+Write in second person where giving instructions ("Run npm install"), third person everywhere else ("The system uses...")
+Every section must be substantive — minimum 3-4 sentences of real content per section, not just a heading with one line
+The total document should be comprehensive enough that a new developer can understand, run, and contribute to the project without asking any questions
+
+
+OUTPUT
+Create the file at exactly this path: docs/DOCUMENTATION.md
+Do not output the documentation in chat. Write it directly to the file. After creating the file, confirm with: "Documentation written to docs/DOCUMENTATION.md — X lines, Y sections."

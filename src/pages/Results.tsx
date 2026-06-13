@@ -16,6 +16,8 @@ interface ProbableQuestion {
   priority?: 1 | 2 | 3;
   isHighFrequency?: boolean;
   solution?: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  roi?: "Very High" | "High" | "Medium" | "Low";
 }
 interface Unit {
   unitNumber: number;
@@ -29,12 +31,27 @@ interface HFQuestion {
   question: string;
   frequency: number;
   unit: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  roi?: "Very High" | "High" | "Medium" | "Low";
+}
+interface SkipStrategy {
+  skipRecommended: number;
+  skipReason: string;
+  skipAlternative: number;
+  mustNotSkip: number[];
+}
+interface NumericalKit {
+  topic: string;
+  unit: string;
+  whyItMatters: string;
 }
 interface RecurraResults {
   subject: string;
   totalYearsAnalyzed: number;
   units: Unit[];
   examStrategy: string;
+  skipStrategy?: SkipStrategy;
+  numericalSurvivalKit?: NumericalKit[];
   highFrequencyTopics?: string[];
   highFrequencyQuestions?: HFQuestion[];
   superHighFrequencyTopics?: string[];
@@ -80,6 +97,24 @@ const rs = (visible: boolean): React.CSSProperties => ({
 });
 
 /* ─────────────────────────────────────────────
+   BADGE HELPERS
+───────────────────────────────────────────── */
+const getDifficultyClass = (d?: string) => {
+  if (d === "Easy")   return "badge-easy";
+  if (d === "Medium") return "badge-medium";
+  if (d === "Hard")   return "badge-hard";
+  return "";
+};
+
+const getRoiClass = (r?: string) => {
+  if (r === "Very High") return "badge-roi-vh";
+  if (r === "High")      return "badge-roi-h";
+  if (r === "Medium")    return "badge-roi-m";
+  if (r === "Low")       return "badge-roi-l";
+  return "";
+};
+
+/* ─────────────────────────────────────────────
    QUESTION ROW
 ───────────────────────────────────────────── */
 const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
@@ -88,11 +123,7 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
   const p = getP(pKey);
 
   return (
-    <div
-      ref={ref}
-      className="q-row group py-4"
-      style={rs(visible)}
-    >
+    <div ref={ref} className="q-row group py-4" style={rs(visible)}>
       <div className="flex items-start justify-between gap-5">
         <div className="flex min-w-0 flex-1 items-start gap-3.5">
           {pKey === 1 ? (
@@ -103,17 +134,22 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
             <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
           )}
           <div className="min-w-0 flex-1">
-            <MathRenderer
-              content={q.question}
-              className="text-[0.9rem] leading-[1.7]"
-            />
+            <MathRenderer content={q.question} className="text-[0.9rem] leading-[1.7]" />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {q.difficulty && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
+                  {q.difficulty}
+                </span>
+              )}
+              {q.roi && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getRoiClass(q.roi)}`}>
+                  {q.roi} ROI
+                </span>
+              )}
+            </div>
             {q.solution && (
-              <div
-                className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-[0.82rem] leading-[1.75] text-white/55"
-              >
-                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                  Solution
-                </p>
+              <div className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-[0.82rem] leading-[1.75] text-white/55">
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Solution</p>
                 <MathRenderer content={q.solution} />
               </div>
             )}
@@ -151,7 +187,19 @@ const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
           {q.frequency}×
         </span>
       </div>
-      <p className="mt-2 text-[11px] text-white/28">{q.unit}</p>
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        <p className="text-[11px] text-white/28">{q.unit}</p>
+        {q.difficulty && (
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
+            {q.difficulty}
+          </span>
+        )}
+        {q.roi && (
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getRoiClass(q.roi)}`}>
+            {q.roi} ROI
+          </span>
+        )}
+      </div>
     </div>
   );
 };
@@ -468,7 +516,7 @@ const Results = () => {
   const [mounted, setMounted]     = useState(false);
   const [copied, setCopied]       = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [activeTab, setActiveTab] = useState<"units" | "strategy" | "topics" | "hf">("units");
+  const [activeTab, setActiveTab] = useState<"units" | "strategy" | "skip" | "hf">("units");
 
   useEffect(() => {
     const raw = localStorage.getItem("recurra_results");
@@ -532,7 +580,7 @@ const Results = () => {
   const TABS = [
     { key: "units"    as const, label: "Unit-wise" },
     { key: "strategy" as const, label: "Strategy" },
-    { key: "topics"   as const, label: "Topics" },
+    { key: "skip"     as const, label: "Skip Plan" },
     { key: "hf"       as const, label: "Must Prepare", count: mustPrepare.length },
   ];
 
@@ -1082,6 +1130,73 @@ const Results = () => {
           break-inside: avoid;
           page-break-inside: avoid;
         }
+        /* ── Difficulty badge ── */
+        .badge-easy   { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2);  color: rgb(134,239,172); }
+        .badge-medium { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: rgb(252,211,77); }
+        .badge-hard   { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2);  color: rgb(252,165,165); }
+
+        /* ── ROI badge ── */
+        .badge-roi-vh { background: rgba(59,111,212,0.1);   border: 1px solid rgba(59,111,212,0.25);  color: rgb(147,180,248); }
+        .badge-roi-h  { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);  color: rgba(255,255,255,0.5); }
+        .badge-roi-m  { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); color: rgba(255,255,255,0.3); }
+        .badge-roi-l  { background: rgba(239,68,68,0.05);   border: 1px solid rgba(239,68,68,0.1);   color: rgba(252,165,165,0.5); }
+
+        /* ── Skip strategy card ── */
+        .skip-card {
+          background: rgba(245,158,11,0.04);
+          border: 1px solid rgba(245,158,11,0.12);
+          border-left: 3px solid rgba(245,158,11,0.6);
+          border-radius: 16px;
+          padding: 22px 24px;
+          margin-bottom: 16px;
+        }
+        .skip-card-safe {
+          background: rgba(34,197,94,0.04);
+          border: 1px solid rgba(34,197,94,0.1);
+          border-left: 3px solid rgba(34,197,94,0.5);
+          border-radius: 16px;
+          padding: 22px 24px;
+          margin-bottom: 16px;
+        }
+        .must-not-skip-pill {
+          background: rgba(239,68,68,0.08);
+          border: 1px solid rgba(239,68,68,0.18);
+          color: rgb(252,165,165);
+          border-radius: 999px;
+          padding: 4px 12px;
+          font-size: 11px;
+          font-weight: 600;
+        }
+
+        /* ── Numerical kit card ── */
+        .kit-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 14px;
+          padding: 16px 18px;
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+          transition: background 0.18s, border-color 0.18s, transform 0.22s cubic-bezier(0.22,1,0.36,1);
+          will-change: transform;
+        }
+        .kit-card:hover {
+          background: rgba(59,111,212,0.04);
+          border-color: rgba(59,111,212,0.15);
+          transform: translate3d(0,-1px,0);
+        }
+        .kit-number {
+          width: 26px; height: 26px;
+          border-radius: 50%;
+          background: rgba(59,111,212,0.12);
+          border: 1px solid rgba(59,111,212,0.28);
+          color: rgb(147,180,248);
+          font-size: 11px;
+          font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+
         @media (max-width:640px) {
           .tab-btn { font-size: 0.72rem; padding: 7px 2px; }
         }
@@ -1212,41 +1327,82 @@ const Results = () => {
             </div>
           )}
 
-          {/* ════ TOPICS ════ */}
-          {mounted && activeTab === "topics" && (
+          {/* ════ SKIP PLAN ════ */}
+          {mounted && activeTab === "skip" && (
             <div className="b-rev bd3">
-              <p className="sec-lbl">High Frequency Topics</p>
+              <p className="sec-lbl">Unit Skip Strategy</p>
 
-              {hfTopics.length > 0 ? (
-                <div className="flex flex-wrap gap-2.5">
-                  {hfTopics.map((t, i) => <span key={i} className="hft-pill">{t}</span>)}
-                </div>
+              {data.skipStrategy ? (
+                <>
+                  <div className="skip-card mb-6">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-base">⚡</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
+                        Recommended Skip
+                      </span>
+                    </div>
+                    <p className="text-[1rem] font-semibold text-white/85 mb-2">
+                      Unit {data.skipStrategy.skipRecommended}
+                    </p>
+                    <p className="text-[0.88rem] text-white/45 leading-relaxed">
+                      {data.skipStrategy.skipReason}
+                    </p>
+                  </div>
+
+                  <div className="skip-card-safe mb-6">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-base">✓</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-green-400/70">
+                        Alternative Skip
+                      </span>
+                    </div>
+                    <p className="text-[0.88rem] text-white/45 leading-relaxed">
+                      If you've already prepared Unit {data.skipStrategy.skipRecommended}, skip Unit {data.skipStrategy.skipAlternative} instead.
+                    </p>
+                  </div>
+
+                  {data.skipStrategy.mustNotSkip?.length > 0 && (
+                    <div className="mb-10">
+                      <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/20">
+                        Never Skip These
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {data.skipStrategy.mustNotSkip.map(u => (
+                          <span key={u} className="must-not-skip-pill">Unit {u}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {data.numericalSurvivalKit?.length > 0 && (
+                    <>
+                      <p className="sec-lbl mt-10">Numerical Survival Kit</p>
+                      <p className="mb-6 text-[0.88rem] text-white/30 leading-relaxed">
+                        Practice exactly these before the exam. Everything else is theory.
+                      </p>
+                      <div className="space-y-3">
+                        {data.numericalSurvivalKit.map((item, i) => (
+                          <div key={i} className="kit-card">
+                            <span className="kit-number">{i + 1}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[0.9rem] font-medium text-white/80 mb-1">
+                                {item.topic}
+                              </p>
+                              <p className="text-[11px] text-white/28 mb-1.5">{item.unit}</p>
+                              <p className="text-[11px] text-white/40 leading-relaxed">
+                                {item.whyItMatters}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
               ) : (
                 <p className="text-[0.9rem] text-white/28">
-                  No high-frequency topics detected — try adding more years of papers.
+                  Skip strategy not available — add more years of papers for better analysis.
                 </p>
-              )}
-
-              {data.units?.some(u => u.topTopics?.length > 0) && (
-                <div className="mt-14">
-                  <p className="sec-lbl">Topics by Unit</p>
-                  <div className="space-y-8">
-                    {data.units?.map(u =>
-                      u.topTopics?.length > 0 ? (
-                        <div key={u.unitNumber}>
-                          <p className="mb-3 text-[0.82rem] font-medium text-white/38">
-                            Unit {u.unitNumber} — {u.unitTitle}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {u.topTopics.map((t, i) => (
-                              <span key={i} className="topic-pill rounded-full px-3 py-1 text-[11px] text-white/35">{t}</span>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null
-                    )}
-                  </div>
-                </div>
               )}
             </div>
           )}
