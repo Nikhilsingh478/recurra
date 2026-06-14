@@ -34,7 +34,7 @@ async function callGemini(prompt: string): Promise<any> {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 14000 },
+          generationConfig: { temperature: 0, maxOutputTokens: 20000 },
         }),
       }
     );
@@ -98,10 +98,8 @@ ROI (per question):
 - Low: appears once or is hard with low frequency
 
 TRENDING TOPICS:
-- After assigning priorities, scan the 2 most recent years/papers in the dataset
-- If a topic appears in both of the 2 most recent papers, mark it as trending
-- Add a "trending": true field to that question object, false otherwise
-- This is independent of frequency — a topic can be Priority 3 but still trending if it appeared in the last 2 papers
+- Scan the 2 most recent papers only
+- If a topic appears in both, set "trending": true, otherwise false
 
 LOW PRIORITY LABELING:
 - Any question with Priority 3 (bottom of frequency range) must have a "lowPriority": true field
