@@ -53,67 +53,64 @@ async function callGemini(prompt) {
   throw new Error(lastError || "ALL_KEYS_EXHAUSTED");
 }
 
-const ANALYSIS_PROMPT = String.raw`You are an expert university exam strategist. Analyze the provided syllabus and previous year question papers with surgical precision.
+const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
 
 STRICT RULES FOR QUESTION INCLUSION:
-- Include a question ONLY if it is directly tied to a topic explicitly mentioned in the syllabus
-- Do NOT include out-of-syllabus questions even if they appeared in papers
+- Include a question ONLY if directly tied to a topic explicitly in the syllabus
+- Do NOT include out-of-syllabus questions
 - Do NOT pad — quality over quantity
 - Maximum 8 questions per unit, ideally 4-6
-- Sort questions within each unit from highest frequency to lowest frequency
+- Sort questions within each unit from highest to lowest frequency
 - Rank units by numbers not words
 
 FREQUENCY COUNTING:
-- Count how many different year papers contain a question about this topic
-- Similar questions about the same concept count as the same question
+- Count how many different year papers contain a question on this topic
+- Similar questions about the same concept = same question
 - Be conservative — if unsure whether two questions match, count separately
 
-PRIORITY SYSTEM (dynamic — never use fixed thresholds):
-- Collect ALL question frequencies across every unit
-- Identify highest (max) and lowest (min) frequency values
-- Assign priorities relatively:
-  - Priority 1: TOP of the frequency range (most repeated)
-  - Priority 2: MIDDLE of the frequency range
-  - Priority 3: BOTTOM of the frequency range (least repeated)
-- Unit-level priority matches the highest question priority within that unit
+PRIORITY SYSTEM (dynamic):
+- Collect ALL frequencies across every unit first
+- Assign priorities relative to the actual spread in THIS dataset:
+  - Priority 1: top of frequency range (most repeated)
+  - Priority 2: middle of frequency range
+  - Priority 3: bottom of frequency range
+- Max=5: freq 5→P1, freq 3-4→P2, freq 1-2→P3
+- Max=3: freq 3→P1, freq 2→P2, freq 1→P3
+- Unit priority = highest question priority within that unit
 
-DIFFICULTY CLASSIFICATION:
-Classify each question as "Easy", "Medium", or "Hard" based on:
-- Easy: Pure theory, definitions, comparisons, short explanations — can be answered from memory with no calculations
-- Medium: Structured theory with diagrams, or procedural numericals that follow a fixed repeatable pattern (e.g. FIRST/FOLLOW, CRC, basic blocks)
-- Hard: Complex multi-step numericals, parsing table construction, algorithm traces that require deep practice to execute correctly under exam pressure
+DIFFICULTY (per question):
+- Easy: definition, explanation, comparison — no calculation required
+- Medium: requires algorithm steps, diagram, or structured derivation
+- Hard: requires numerical calculation, proof, or multi-step problem solving
 
-ROI CLASSIFICATION:
-Classify each question as "Very High", "High", "Medium", or "Low" ROI based on:
-- ROI = (marks potential × recurrence) ÷ effort required
-- Very High ROI: High frequency + Easy or Medium difficulty (e.g. compiler phases, OSI vs TCP/IP, framing methods)
-- High ROI: Medium frequency + Easy difficulty OR high frequency + Medium difficulty
-- Medium ROI: Hard difficulty but appears frequently (must do but costs time)
-- Low ROI: Hard difficulty + low frequency (skip unless time remains)
+ROI (per question):
+- Very High: appears frequently AND is easy-medium difficulty
+- High: appears frequently but hard, OR medium frequency and easy
+- Medium: appears 2-3 times, medium difficulty
+- Low: appears once or is hard with low frequency
 
 SKIP STRATEGY:
-Analyze the paper pattern carefully. If the paper allows attempting any 4 out of 5 main questions (meaning one full unit can be skipped), identify:
-- skipRecommended: the unit number the student should skip for best marks-to-effort ratio
-- skipReason: one concise sentence explaining why this unit should be skipped
-- skipAlternative: the second-best unit to skip if the student has already prepared the recommended skip unit
-- mustNotSkip: array of unit numbers that absolutely cannot be skipped (compulsory or highest ROI)
+- Analyze all units by: question frequency, unit priority, difficulty
+- Identify which unit to most safely skip (lowest frequency + hardest + lowest ROI)
+- Identify one alternative skip unit
+- Identify must-not-skip units (highest frequency + easiest marks)
+- Write 2-sentence rationale explaining the reasoning
 
 NUMERICAL SURVIVAL KIT:
-Identify the minimum set of numerical/problem-solving question types that covers the majority of recurring problem-solving questions across all units. These are the ones the student must practice by hand before the exam. Maximum 7 items. For each item provide:
-- topic: the specific numerical type (e.g. "CRC computation", "Dijkstra's algorithm")
-- unit: which unit it belongs to
-- whyItMatters: one line explaining why this specific numerical is non-negotiable
+- Scan all papers for questions requiring actual calculation or algorithm application
+- List only numerical question types repeating across 2+ papers
+- Format: "Topic — what to practice"
+- Maximum 6 items
 
-MATHEMATICAL CONTENT FORMATTING (STRICT):
-- ALL mathematical expressions MUST be written in valid LaTeX
-- Inline math → single dollars: $x^2 + y^2$
-- Block equations → double dollars: $$\frac{a}{b}$$
-- NEVER output raw math — always LaTeX
-- For non-math subjects, plain text is fine
+MATHEMATICAL FORMATTING (STRICT):
+- ALL math expressions MUST be valid LaTeX
+- Inline math → single dollars: $x^2$
+- Block equations → double dollars: $$\\frac{a}{b}$$
+- NEVER raw math outside LaTeX
+- Use proper commands: \\frac, \\sqrt, \\int, \\sum, \\alpha, \\beta, \\theta
 
-Return ONLY a valid JSON object. No markdown, no backticks, no explanation, no preamble.
+Return ONLY valid JSON. No markdown, no backticks, no explanation.
 
-JSON structure:
 {
   "subject": "detected subject name",
   "totalYearsAnalyzed": <number>,
@@ -124,31 +121,18 @@ JSON structure:
       "unitPriority": 1 | 2 | 3,
       "probableQuestions": [
         {
-          "question": "concise question text",
+          "question": "question text",
           "frequency": <number>,
           "priority": 1 | 2 | 3,
           "difficulty": "Easy" | "Medium" | "Hard",
           "roi": "Very High" | "High" | "Medium" | "Low"
         }
       ],
-      "topTopics": ["topic1", "topic2", "topic3"]
+      "topTopics": ["topic1", "topic2"]
     }
   ],
-  "examStrategy": "2-3 sentence focused strategy tip based on actual patterns found",
-  "skipStrategy": {
-    "skipRecommended": <unit number>,
-    "skipReason": "one sentence",
-    "skipAlternative": <unit number>,
-    "mustNotSkip": [<unit numbers>]
-  },
-  "numericalSurvivalKit": [
-    {
-      "topic": "specific numerical type",
-      "unit": "unit title",
-      "whyItMatters": "one line"
-    }
-  ],
-  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
+  "examStrategy": "2-3 sentence strategy based on actual patterns",
+  "highFrequencyTopics": ["topic1", "topic2"],
   "highFrequencyQuestions": [
     {
       "question": "question text",
@@ -157,11 +141,22 @@ JSON structure:
       "difficulty": "Easy" | "Medium" | "Hard",
       "roi": "Very High" | "High" | "Medium" | "Low"
     }
+  ],
+  "skipStrategy": {
+    "recommendedSkip": "Unit X — unit title",
+    "alternativeSkip": "Unit Y — unit title",
+    "mustNotSkip": ["Unit A — title", "Unit B — title"],
+    "rationale": "2 sentence explanation"
+  },
+  "numericalKit": [
+    {
+      "topic": "topic name",
+      "practice": "what specifically to practice"
+    }
   ]
 }
 
-For highFrequencyQuestions: include Priority 1 and Priority 2 questions only, sorted by frequency descending.
-For highFrequencyTopics: topics appearing across multiple units or multiple years.
+For highFrequencyQuestions: Priority 1 and Priority 2 only, sorted by frequency descending.
 
 SYLLABUS:
 {{SYLLABUS}}

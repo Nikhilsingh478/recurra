@@ -64,54 +64,64 @@ async function callGemini(prompt: string): Promise<any> {
 const ANALYSIS_PROMPT = `You are an expert university exam analyst. Analyze the provided syllabus and previous year question papers with surgical precision.
 
 STRICT RULES FOR QUESTION INCLUSION:
-- Include a question ONLY if it is directly tied to a topic explicitly mentioned in the syllabus
-- Do NOT include questions that are out-of-syllabus even if they appeared in papers
-- Do NOT pad the list — quality over quantity
+- Include a question ONLY if directly tied to a topic explicitly in the syllabus
+- Do NOT include out-of-syllabus questions
+- Do NOT pad — quality over quantity
 - Maximum 8 questions per unit, ideally 4-6
-- Sort questions within each unit from highest frequency to lowest frequency
-- Rank the units not by words, rank the units by numbers
+- Sort questions within each unit from highest to lowest frequency
+- Rank units by numbers not words
 
 FREQUENCY COUNTING:
-- Count how many different year papers contain a question about this topic/concept
-- Similar questions about the same concept count as the same question
-- Be conservative — if unsure whether two questions match, count them separately
+- Count how many different year papers contain a question on this topic
+- Similar questions about the same concept = same question
+- Be conservative — if unsure whether two questions match, count separately
 
-PRIORITY SYSTEM (dynamic — never use fixed thresholds):
-- First, collect ALL question frequencies across every unit in the entire dataset
-- Identify the highest (max) and lowest (min) frequency values present
-- Then assign priorities relatively based on the actual spread in THIS dataset:
-  - Priority 1: Questions at the TOP of the frequency range (most repeated in this dataset)
-  - Priority 2: Questions in the MIDDLE of the frequency range
-  - Priority 3: Questions at the BOTTOM of the frequency range (least repeated)
-- Concrete examples of how to split the range:
-  - All frequencies = 1 (only one paper): everything is Priority 3, no P1 or P2
-  - Max = 2: frequency 2 → P1, frequency 1 → P3 (skip P2 if no mid values exist)
-  - Max = 3: frequency 3 → P1, frequency 2 → P2, frequency 1 → P3
-  - Max = 4: frequency 4 → P1, frequency 2-3 → P2, frequency 1 → P3
-  - Max = 5: frequency 5 → P1, frequency 3-4 → P2, frequency 1-2 → P3
-  - Max = 6: frequency 5-6 → P1, frequency 3-4 → P2, frequency 1-2 → P3
-- The key rule: Priority 1 always goes to the highest-frequency questions in THIS dataset, whatever that number is
-- Unit-level priority: matches the highest question priority within that unit
+PRIORITY SYSTEM (dynamic):
+- Collect ALL frequencies across every unit first
+- Assign priorities relative to the actual spread in THIS dataset:
+  - Priority 1: top of frequency range (most repeated)
+  - Priority 2: middle of frequency range
+  - Priority 3: bottom of frequency range
+- Max=5: freq 5→P1, freq 3-4→P2, freq 1-2→P3
+- Max=3: freq 3→P1, freq 2→P2, freq 1→P3
+- Unit priority = highest question priority within that unit
 
-MATHEMATICAL CONTENT FORMATTING (STRICT):
-- ALL mathematical expressions, equations, formulas, variables, and symbols MUST be written in valid LaTeX
-- Inline math (within a sentence) → wrap in single dollars: $x^2 + y^2 = z^2$
-- Block / display equations (standalone) → wrap in double dollars: $$\int_0^1 x^2 \, dx = \frac{1}{3}$$
-- Multi-step derivations or aligned equations → use:
-  $$\begin{aligned} a &= b + c \\ &= d \end{aligned}$$
-- NEVER output raw math like "x^2 + y^2 = z^2" or "integral from 0 to 1" — always LaTeX
-- Use proper LaTeX commands: \frac{a}{b}, \sqrt{x}, \int, \sum, \lim, \alpha, \beta, \theta, \cdot, \times, \leq, \geq, \neq, \to, \infty
-- Escape special characters properly. Use \\ for line breaks inside aligned blocks
-- Do NOT mix raw text math with LaTeX in the same expression
-- Apply this to BOTH question text and any solution/explanation text
-- For non-math subjects (history, literature, etc.), no LaTeX is needed — plain text is fine
+DIFFICULTY (per question):
+- Easy: definition, explanation, comparison — no calculation required
+- Medium: requires algorithm steps, diagram, or structured derivation
+- Hard: requires numerical calculation, proof, or multi-step problem solving
 
-Return ONLY a valid JSON object. No markdown, no explanation, no backticks, no preamble.
+ROI (per question):
+- Very High: appears frequently AND is easy-medium difficulty
+- High: appears frequently but hard, OR medium frequency and easy
+- Medium: appears 2-3 times, medium difficulty
+- Low: appears once or is hard with low frequency
 
-JSON structure:
+SKIP STRATEGY:
+- Analyze all units by: question frequency, unit priority, difficulty
+- Identify which unit to most safely skip (lowest frequency + hardest + lowest ROI)
+- Identify one alternative skip unit
+- Identify must-not-skip units (highest frequency + easiest marks)
+- Write 2-sentence rationale explaining the reasoning
+
+NUMERICAL SURVIVAL KIT:
+- Scan all papers for questions requiring actual calculation or algorithm application
+- List only numerical question types repeating across 2+ papers
+- Format: "Topic — what to practice"
+- Maximum 6 items
+
+MATHEMATICAL FORMATTING (STRICT):
+- ALL math expressions MUST be valid LaTeX
+- Inline math → single dollars: $x^2$
+- Block equations → double dollars: $$\\frac{a}{b}$$
+- NEVER raw math outside LaTeX
+- Use proper commands: \\frac, \\sqrt, \\int, \\sum, \\alpha, \\beta, \\theta
+
+Return ONLY valid JSON. No markdown, no backticks, no explanation.
+
 {
   "subject": "detected subject name",
-  "totalYearsAnalyzed": <number of distinct years found in papers>,
+  "totalYearsAnalyzed": <number>,
   "units": [
     {
       "unitNumber": 1,
@@ -119,27 +129,42 @@ JSON structure:
       "unitPriority": 1 | 2 | 3,
       "probableQuestions": [
         {
-          "question": "concise question text",
+          "question": "question text",
           "frequency": <number>,
-          "priority": 1 | 2 | 3
+          "priority": 1 | 2 | 3,
+          "difficulty": "Easy" | "Medium" | "Hard",
+          "roi": "Very High" | "High" | "Medium" | "Low"
         }
       ],
-      "topTopics": ["topic1", "topic2", "topic3"]
+      "topTopics": ["topic1", "topic2"]
     }
   ],
-  "examStrategy": "2-3 sentence focused strategy tip based on the actual patterns found",
-  "highFrequencyTopics": ["topic1", "topic2", "topic3"],
+  "examStrategy": "2-3 sentence strategy based on actual patterns",
+  "highFrequencyTopics": ["topic1", "topic2"],
   "highFrequencyQuestions": [
     {
       "question": "question text",
       "frequency": <number>,
-      "unit": "unit title"
+      "unit": "unit title",
+      "difficulty": "Easy" | "Medium" | "Hard",
+      "roi": "Very High" | "High" | "Medium" | "Low"
+    }
+  ],
+  "skipStrategy": {
+    "recommendedSkip": "Unit X — unit title",
+    "alternativeSkip": "Unit Y — unit title",
+    "mustNotSkip": ["Unit A — title", "Unit B — title"],
+    "rationale": "2 sentence explanation"
+  },
+  "numericalKit": [
+    {
+      "topic": "topic name",
+      "practice": "what specifically to practice"
     }
   ]
 }
 
-For highFrequencyQuestions: include questions with Priority 1 OR Priority 2 (all questions that are not at the bottom of the frequency range for this dataset), sorted by frequency descending. These are the student's must-prepare list.
-For highFrequencyTopics: topics that appear across multiple units or multiple years.
+For highFrequencyQuestions: Priority 1 and Priority 2 only, sorted by frequency descending.
 
 SYLLABUS:
 {{SYLLABUS}}

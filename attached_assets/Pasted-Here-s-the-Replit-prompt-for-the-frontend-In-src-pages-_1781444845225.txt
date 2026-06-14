@@ -1,0 +1,47 @@
+Here's the Replit prompt for the frontend:
+
+---
+
+In `src/pages/Results.tsx`, update the rendering to properly display the new fields coming from the API. The JSON now includes `difficulty`, `roi`, `skipStrategy`, and `numericalKit`. Make these changes:
+
+**1. Difficulty badges on every question card:**
+- Easy → green badge
+- Medium → amber badge  
+- Hard → red badge
+
+**2. ROI badges on every question card:**
+- Very High → blue badge
+- High → white/muted badge
+- Medium → dim/gray badge
+- Low → red-tinted badge
+
+Show both difficulty and ROI badges next to the existing priority badge on every question card in the Unit-wise tab and Must Prepare tab.
+
+**3. Fix the Skip Plan tab:**
+
+Currently showing: "Skip strategy not available — add more years of papers for better analysis."
+
+Replace this with proper rendering of the `skipStrategy` object from the JSON:
+
+- A card showing `skipStrategy.recommendedSkip` with a clear "Recommended Skip" label
+- A card showing `skipStrategy.alternativeSkip` with an "Alternative Skip" label
+- A section listing `skipStrategy.mustNotSkip` units with a "Must Not Skip" label in red/warning color
+- A paragraph showing `skipStrategy.rationale`
+
+**4. Numerical Survival Kit section in the Skip Plan tab:**
+
+Below the skip strategy cards, add a new section titled "Numerical Survival Kit" that renders `numericalKit` as a list where each item shows:
+- `topic` in bold
+- `practice` as description text below it
+
+If `numericalKit` is empty or missing, show nothing (no fallback message).
+
+**5. PDF export:**
+
+Make sure the `PDFReport` component also renders these new sections — difficulty/ROI badges on questions, skip strategy cards, and numerical survival kit — so they appear in the exported PDF.
+
+Do not change any other tabs, styling systems, or existing functionality. Only add the new fields to the existing card/badge structure already in the file.
+
+---
+
+Give this to Replit after the first prompt is confirmed done. Come back after and we'll test it together.
