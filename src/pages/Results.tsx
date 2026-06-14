@@ -35,15 +35,14 @@ interface HFQuestion {
   roi?: "Very High" | "High" | "Medium" | "Low";
 }
 interface SkipStrategy {
-  skipRecommended: number;
-  skipReason: string;
-  skipAlternative: number;
-  mustNotSkip: number[];
+  recommendedSkip: string;
+  alternativeSkip: string;
+  mustNotSkip: string[];
+  rationale: string;
 }
 interface NumericalKit {
   topic: string;
-  unit: string;
-  whyItMatters: string;
+  practice: string;
 }
 interface RecurraResults {
   subject: string;
@@ -51,7 +50,7 @@ interface RecurraResults {
   units: Unit[];
   examStrategy: string;
   skipStrategy?: SkipStrategy;
-  numericalSurvivalKit?: NumericalKit[];
+  numericalKit?: NumericalKit[];
   highFrequencyTopics?: string[];
   highFrequencyQuestions?: HFQuestion[];
   superHighFrequencyTopics?: string[];
@@ -510,7 +509,7 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
         </PDFPage>
       ))}
 
-      {(data.skipStrategy || (data.numericalSurvivalKit?.length ?? 0) > 0) && (
+      {(data.skipStrategy || (data.numericalKit?.length ?? 0) > 0) && (
         <PDFPage compact>
           <section className="pdf-section pdf-section-first">
             {data.skipStrategy && (
@@ -518,21 +517,19 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
                 <p className="pdf-label">Unit Skip Strategy</p>
                 <div className="pdf-skip-recommended pdf-avoid">
                   <p className="pdf-skip-tag">⚡ Recommended Skip</p>
-                  <p className="pdf-skip-unit">Unit {data.skipStrategy.skipRecommended}</p>
-                  <p className="pdf-skip-reason">{data.skipStrategy.skipReason}</p>
+                  <p className="pdf-skip-unit">{data.skipStrategy.recommendedSkip}</p>
+                  <p className="pdf-skip-reason">{data.skipStrategy.rationale}</p>
                 </div>
                 <div className="pdf-skip-alternative pdf-avoid">
                   <p className="pdf-skip-tag-green">✓ Alternative Skip</p>
-                  <p className="pdf-skip-reason">
-                    If you've already prepared Unit {data.skipStrategy.skipRecommended}, skip Unit {data.skipStrategy.skipAlternative} instead.
-                  </p>
+                  <p className="pdf-skip-unit" style={{ fontSize: 13 }}>{data.skipStrategy.alternativeSkip}</p>
                 </div>
                 {data.skipStrategy.mustNotSkip?.length > 0 && (
                   <div className="pdf-skip-must-not pdf-avoid">
-                    <p className="pdf-skip-tag-dim">Never Skip These</p>
+                    <p className="pdf-skip-tag-dim">Must Not Skip</p>
                     <div className="pdf-skip-pills">
-                      {data.skipStrategy.mustNotSkip.map(u => (
-                        <span key={u} className="pdf-must-not-pill">Unit {u}</span>
+                      {data.skipStrategy.mustNotSkip.map((u, i) => (
+                        <span key={i} className="pdf-must-not-pill">{u}</span>
                       ))}
                     </div>
                   </div>
@@ -540,19 +537,18 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
               </>
             )}
 
-            {(data.numericalSurvivalKit?.length ?? 0) > 0 && (
+            {(data.numericalKit?.length ?? 0) > 0 && (
               <>
                 <p className="pdf-label" style={{ marginTop: data.skipStrategy ? 28 : 0 }}>
                   Numerical Survival Kit
                 </p>
                 <div className="pdf-kit-list">
-                  {data.numericalSurvivalKit!.map((item, i) => (
+                  {data.numericalKit!.map((item, i) => (
                     <div key={i} className="pdf-kit-item pdf-avoid">
                       <span className="pdf-kit-number">{i + 1}</span>
                       <div>
                         <p className="pdf-kit-topic">{item.topic}</p>
-                        <p className="pdf-kit-unit">{item.unit}</p>
-                        <p className="pdf-kit-why">{item.whyItMatters}</p>
+                        <p className="pdf-kit-why">{item.practice}</p>
                       </div>
                     </div>
                   ))}
@@ -1565,10 +1561,10 @@ const Results = () => {
                       </span>
                     </div>
                     <p className="text-[1rem] font-semibold text-white/85 mb-2">
-                      Unit {data.skipStrategy.skipRecommended}
+                      {data.skipStrategy.recommendedSkip}
                     </p>
                     <p className="text-[0.88rem] text-white/45 leading-relaxed">
-                      {data.skipStrategy.skipReason}
+                      {data.skipStrategy.rationale}
                     </p>
                   </div>
 
@@ -1579,41 +1575,40 @@ const Results = () => {
                         Alternative Skip
                       </span>
                     </div>
-                    <p className="text-[0.88rem] text-white/45 leading-relaxed">
-                      If you've already prepared Unit {data.skipStrategy.skipRecommended}, skip Unit {data.skipStrategy.skipAlternative} instead.
+                    <p className="text-[1rem] font-semibold text-white/85 mb-2">
+                      {data.skipStrategy.alternativeSkip}
                     </p>
                   </div>
 
                   {data.skipStrategy.mustNotSkip?.length > 0 && (
                     <div className="mb-10">
-                      <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/20">
-                        Never Skip These
+                      <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-red-400/70">
+                        Must Not Skip
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {data.skipStrategy.mustNotSkip.map(u => (
-                          <span key={u} className="must-not-skip-pill">Unit {u}</span>
+                        {data.skipStrategy.mustNotSkip.map((u, i) => (
+                          <span key={i} className="must-not-skip-pill">{u}</span>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {data.numericalSurvivalKit?.length > 0 && (
+                  {(data.numericalKit?.length ?? 0) > 0 && (
                     <>
                       <p className="sec-lbl mt-10">Numerical Survival Kit</p>
                       <p className="mb-6 text-[0.88rem] text-white/30 leading-relaxed">
                         Practice exactly these before the exam. Everything else is theory.
                       </p>
                       <div className="space-y-3">
-                        {data.numericalSurvivalKit.map((item, i) => (
+                        {data.numericalKit!.map((item, i) => (
                           <div key={i} className="kit-card">
                             <span className="kit-number">{i + 1}</span>
                             <div className="min-w-0 flex-1">
                               <p className="text-[0.9rem] font-medium text-white/80 mb-1">
                                 {item.topic}
                               </p>
-                              <p className="text-[11px] text-white/28 mb-1.5">{item.unit}</p>
                               <p className="text-[11px] text-white/40 leading-relaxed">
-                                {item.whyItMatters}
+                                {item.practice}
                               </p>
                             </div>
                           </div>
