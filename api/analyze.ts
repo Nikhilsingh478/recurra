@@ -43,6 +43,7 @@ async function callGemini(prompt: string): Promise<any> {
     // try the next key
     if (geminiRes.status === 429 || geminiRes.status === 403) {
       lastError = `Key exhausted (status ${geminiRes.status})`;
+      console.error(`Gemini key failed with status ${geminiRes.status}`);
       continue; // try next key
     }
     
@@ -264,12 +265,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
     if (!raw) {
-      return res.status(500).json({ error: "Analysis failed. Please check your inputs and try again." });
+      const blockReason = data?.promptFeedback?.blockReason || "";
+      const geminiError = data?.error?.message || "";
+      console.error("Gemini empty response:", JSON.stringify(data).substring(0, 300));
+      return res.status(500).json({ 
+        error: `Analysis failed: ${blockReason || geminiError || "Empty response from AI. Please try again."}` 
+      });
+    }
+
+    // Check if Gemini returned an error message instead of JSON
+    if (raw.startsWith("An error") || raw.startsWith("I'm sorry") || raw.startsWith("I cannot") || raw.startsWith("Error")) {
+      console.error("Gemini returned error text:", raw.substring(0, 200));
+      return res.status(500).json({ 
+        error: "AI analysis unavailable right now. Please wait a moment and try again." 
+      });
     }
 
     const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
-    const result = JSON.parse(clean);
+
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch (parseErr) {
+      console.error("JSON parse failed. Raw response start:", raw.substring(0, 300));
+      return res.status(500).json({ 
+        error: "Analysis failed to parse. Try reducing the amount of text in your papers input and try again." 
+      });
+    }
 
     return res.status(200).json(result);
   } catch {

@@ -1,0 +1,63 @@
+Progress actually — this is a different error now. Before it was timing out, now it's getting a response back but it's not JSON. Gemini is returning an error message as plain text instead of JSON.
+This means one of two things:
+
+Gemini API key is hitting quota/rate limit and returning an error string
+The prompt is too long and Gemini is rejecting it
+
+The error says "An error o"... — that's almost certainly "An error occurred" from Gemini's error response being passed straight through.
+
+Here's the Replit prompt:
+
+In both api/analyze.ts and server/analyze.js, find the section where the raw response text is parsed and add better error handling before the JSON parse.
+Find this pattern in both files:
+javascriptconst raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+if (!raw) {
+  return res.status(500).json({ error: "Analysis failed. Please check your inputs and try again." });
+}
+
+const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+const result = JSON.parse(clean);
+Replace with:
+javascriptconst raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+if (!raw) {
+  const blockReason = data?.promptFeedback?.blockReason || "";
+  const geminiError = data?.error?.message || "";
+  console.error("Gemini empty response:", JSON.stringify(data).substring(0, 300));
+  return res.status(500).json({ 
+    error: `Analysis failed: ${blockReason || geminiError || "Empty response from AI. Please try again."}` 
+  });
+}
+
+// Check if Gemini returned an error message instead of JSON
+if (raw.startsWith("An error") || raw.startsWith("I'm sorry") || raw.startsWith("I cannot") || raw.startsWith("Error")) {
+  console.error("Gemini returned error text:", raw.substring(0, 200));
+  return res.status(500).json({ 
+    error: "AI analysis unavailable right now. Please wait a moment and try again." 
+  });
+}
+
+const clean = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+
+let result;
+try {
+  result = JSON.parse(clean);
+} catch (parseErr) {
+  console.error("JSON parse failed. Raw response start:", raw.substring(0, 300));
+  return res.status(500).json({ 
+    error: "Analysis failed to parse. Try reducing the amount of text in your papers input and try again." 
+  });
+}
+Also in the callGemini function in both files, add a console.error log when a key fails so we can see which key is failing:
+Find:
+javascriptif (geminiRes.status === 429 || geminiRes.status === 403) {
+  lastError = `Key exhausted (status ${geminiRes.status})`;
+  continue;
+}
+Replace with:
+javascriptif (geminiRes.status === 429 || geminiRes.status === 403) {
+  lastError = `Key exhausted (status ${geminiRes.status})`;
+  console.error(`Gemini key failed with status ${geminiRes.status}`);
+  continue;
+}
+Do not change anything else in either file.
