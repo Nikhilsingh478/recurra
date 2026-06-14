@@ -108,7 +108,14 @@ const Analyze = () => {
         }),
       });
 
-      const result = await res.json();
+      const text = await res.text();
+      let result: any;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        console.error("Non-JSON response from server:", text.substring(0, 200));
+        throw new Error("Analysis service is currently unavailable. Please try again in a moment.");
+      }
       if (!res.ok) throw new Error(result.error || "Analysis failed");
 
       clearInterval(progInterval);
