@@ -97,6 +97,18 @@ ROI (per question):
 - Medium: appears 2-3 times, medium difficulty
 - Low: appears once or is hard with low frequency
 
+TRENDING TOPICS:
+- After assigning priorities, scan the 2 most recent years/papers in the dataset
+- If a topic appears in both of the 2 most recent papers, mark it as trending
+- Add a "trending": true field to that question object, false otherwise
+- This is independent of frequency — a topic can be Priority 3 but still trending if it appeared in the last 2 papers
+
+LOW PRIORITY LABELING:
+- Any question with Priority 3 (bottom of frequency range) must have a "lowPriority": true field
+- Any question with Priority 1 or Priority 2 must have "lowPriority": false
+- The lowPriority flag tells the frontend to visually de-emphasize these questions
+- Students should know these are worth knowing but not primary focus
+
 SKIP STRATEGY:
 - Analyze all units by: question frequency, unit priority, difficulty
 - Identify which unit to most safely skip (lowest frequency + hardest + lowest ROI)
@@ -133,7 +145,9 @@ Return ONLY valid JSON. No markdown, no backticks, no explanation.
           "frequency": <number>,
           "priority": 1 | 2 | 3,
           "difficulty": "Easy" | "Medium" | "Hard",
-          "roi": "Very High" | "High" | "Medium" | "Low"
+          "roi": "Very High" | "High" | "Medium" | "Low",
+          "trending": true | false,
+          "lowPriority": true | false
         }
       ],
       "topTopics": ["topic1", "topic2"]
@@ -147,7 +161,9 @@ Return ONLY valid JSON. No markdown, no backticks, no explanation.
       "frequency": <number>,
       "unit": "unit title",
       "difficulty": "Easy" | "Medium" | "Hard",
-      "roi": "Very High" | "High" | "Medium" | "Low"
+      "roi": "Very High" | "High" | "Medium" | "Low",
+      "trending": true | false,
+      "lowPriority": true | false
     }
   ],
   "skipStrategy": {

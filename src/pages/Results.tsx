@@ -18,6 +18,8 @@ interface ProbableQuestion {
   solution?: string;
   difficulty?: "Easy" | "Medium" | "Hard";
   roi?: "Very High" | "High" | "Medium" | "Low";
+  trending?: boolean;
+  lowPriority?: boolean;
 }
 interface Unit {
   unitNumber: number;
@@ -33,6 +35,8 @@ interface HFQuestion {
   unit: string;
   difficulty?: "Easy" | "Medium" | "Hard";
   roi?: "Very High" | "High" | "Medium" | "Low";
+  trending?: boolean;
+  lowPriority?: boolean;
 }
 interface SkipStrategy {
   recommendedSkip: string;
@@ -122,7 +126,7 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
   const p = getP(pKey);
 
   return (
-    <div ref={ref} className="q-row group py-4" style={rs(visible)}>
+    <div ref={ref} className="q-row group py-4" style={{ ...rs(visible), opacity: q.lowPriority ? 0.5 : undefined }}>
       <div className="flex items-start justify-between gap-5">
         <div className="flex min-w-0 flex-1 items-start gap-3.5">
           {pKey === 1 ? (
@@ -135,6 +139,16 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
           <div className="min-w-0 flex-1">
             <MathRenderer content={q.question} className="text-[0.9rem] leading-[1.7]" />
             <div className="mt-2 flex flex-wrap gap-1.5">
+              {q.trending && (
+                <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", color:"rgb(251,191,36)" }}>
+                  🔺 Trending
+                </span>
+              )}
+              {q.lowPriority && (
+                <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.28)" }}>
+                  Lower Priority
+                </span>
+              )}
               {q.difficulty && (
                 <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
                   {q.difficulty}
@@ -171,7 +185,7 @@ const QuestionRow = ({ q, index }: { q: ProbableQuestion; index: number }) => {
 const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
   const { ref, visible } = useReveal(index * 50);
   return (
-    <div ref={ref} className="hfq-card" style={rs(visible)}>
+    <div ref={ref} className="hfq-card" style={{ ...rs(visible), opacity: q.lowPriority ? 0.5 : undefined }}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="mt-0.5 shrink-0 text-sm">🔥</span>
@@ -188,6 +202,16 @@ const HFCard = ({ q, index }: { q: HFQuestion; index: number }) => {
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <p className="text-[11px] text-white/28">{q.unit}</p>
+        {q.trending && (
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", color:"rgb(251,191,36)" }}>
+            🔺 Trending
+          </span>
+        )}
+        {q.lowPriority && (
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.28)" }}>
+            Lower Priority
+          </span>
+        )}
         {q.difficulty && (
           <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
             {q.difficulty}
@@ -430,10 +454,20 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
                           <span className="pdf-question-number" style={{ color: qp.color }}>
                             {index + 1}.
                           </span>
-                          <div className="pdf-question-text">
+                          <div className="pdf-question-text" style={{ opacity: q.lowPriority ? 0.5 : undefined }}>
                             <MathRenderer content={q.question} />
-                            {(q.difficulty || q.roi) && (
+                            {(q.trending || q.lowPriority || q.difficulty || q.roi) && (
                               <div className="pdf-badges">
+                                {q.trending && (
+                                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", color:"rgb(251,191,36)" }}>
+                                    🔺 Trending
+                                  </span>
+                                )}
+                                {q.lowPriority && (
+                                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.28)" }}>
+                                    Lower Priority
+                                  </span>
+                                )}
                                 {q.difficulty && (
                                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
                                     {q.difficulty}
@@ -477,13 +511,23 @@ const PDFReport = ({ data }: { data: RecurraResults }) => {
             <p className="pdf-label">Must Prepare — High Frequency Questions</p>
             <div className="pdf-must-list">
               {pageQuestions.map((q, index) => (
-                <div key={`${q.question}-${index}`} className="pdf-must-item pdf-avoid">
+                <div key={`${q.question}-${index}`} className="pdf-must-item pdf-avoid" style={{ opacity: q.lowPriority ? 0.5 : undefined }}>
                   <span>{mustPreparePages.slice(0, pageIndex).reduce((sum, page) => sum + page.length, 0) + index + 1}.</span>
                   <div>
                     <MathRenderer content={q.question} />
                     <p>{q.unit}</p>
-                    {(q.difficulty || q.roi) && (
+                    {(q.trending || q.lowPriority || q.difficulty || q.roi) && (
                       <div className="pdf-badges">
+                        {q.trending && (
+                          <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", color:"rgb(251,191,36)" }}>
+                            🔺 Trending
+                          </span>
+                        )}
+                        {q.lowPriority && (
+                          <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.28)" }}>
+                            Lower Priority
+                          </span>
+                        )}
                         {q.difficulty && (
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getDifficultyClass(q.difficulty)}`}>
                             {q.difficulty}
