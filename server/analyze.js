@@ -113,7 +113,7 @@ Return ONLY valid JSON. No markdown, no backticks, no explanation.
 
 {
   "subject": "detected subject name",
-  "totalYearsAnalyzed": <number>,
+  "totalPapersAnalyzed": <number of distinct question papers found in the input — count each paper separately even if from the same year, e.g. Regular + Supplementary from 2024 = 2 papers>,
   "units": [
     {
       "unitNumber": 1,

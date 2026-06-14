@@ -1,0 +1,36 @@
+Fix years/papers counter in API:
+In api/analyze.ts, inside the ANALYSIS_PROMPT variable make two changes:
+First, replace this line in the JSON structure:
+"totalYearsAnalyzed": <number of distinct years found in papers>,
+With:
+"totalPapersAnalyzed": <number of distinct question papers found in the input — count each paper separately even if from the same year, e.g. Regular + Supplementary from 2024 = 2 papers>,
+Second, find this line in the JSON structure:
+"totalYearsAnalyzed": 3,
+This is in the example — update the field name to totalPapersAnalyzed everywhere it appears in the prompt.
+Then in the handler function, the response is passed directly to the frontend so no backend change needed — just the prompt field name change.
+Do not change anything else in the file.
+
+PROMPT 2 — Update Docs page to reflect new features:
+In src/pages/Docs.tsx, make these updates:
+1. In the READING YOUR RESULTS section, replace the current 4 docs-result-row items array with these 8 items:
+javascript{ dot:"#f59e0b", title:"Priority 1 — Must Prepare", desc:"Questions at the top of the frequency range for your dataset. These are the most repeated topics across years. Non-negotiable preparation." },
+{ dot:"#3b6fd4", title:"Priority 2 — High Value", desc:"Questions in the middle of the frequency range. Strong pattern, solid chance of appearing. Prepare these after Priority 1." },
+{ dot:"rgba(255,255,255,0.22)", title:"Priority 3 — Worth Knowing", desc:"Questions that appeared least frequently but are directly from your syllabus. Cover these if time permits." },
+{ dot:"#22c55e", title:"Difficulty — Easy / Medium / Hard", desc:"Each question is tagged by effort required. Easy means definition or explanation. Medium means algorithm steps or diagrams. Hard means numerical calculation or multi-step proof." },
+{ dot:"#3b6fd4", title:"ROI Badge", desc:"Return on investment per question — Very High means high frequency and low effort. Use this to prioritize when time is short." },
+{ dot:"#f59e0b", title:"Must Prepare Tab", desc:"A distilled list of Priority 1 and Priority 2 questions across all units. Your shortest path to exam readiness." },
+{ dot:"#3b6fd4", title:"Skip Plan Tab", desc:"Recurra recommends which unit you can most safely skip based on frequency and difficulty data, which units to never skip, and why." },
+{ dot:"#22c55e", title:"Numerical Survival Kit", desc:"A targeted list of calculation-based questions that repeat across papers. These are the numericals you must practice, not just read." },
+2. In the PRO TIPS section, update tip 4 from:
+{ title:"Start With Must Prepare", desc:"After analysis, go directly to the Must Prepare tab first. These are your highest ROI questions." },
+To:
+{ title:"Start With Must Prepare + Skip Plan", desc:"After analysis, go to Must Prepare first for highest ROI questions, then check the Skip Plan tab to make a smart decision about which unit to drop if you're short on time." },
+3. Add a new full-width tip after the existing tip 05, making it tip 06:
+javascript<div data-reveal style={rv(0.48)} className="docs-card docs-card-hover sm:col-span-2">
+  <span style={{ fontFamily:"Syne,sans-serif", fontSize:"0.65rem", color:"rgba(255,255,255,0.15)", fontWeight:700, letterSpacing:"0.1em" }}>06</span>
+  <h4 style={{ fontFamily:"Syne,sans-serif", fontWeight:600, fontSize:"0.98rem", color:"rgba(255,255,255,0.88)", marginTop:10, marginBottom:6 }}>Practice the Numerical Kit</h4>
+  <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"0.875rem", lineHeight:1.72 }}>
+    For technical subjects, the Numerical Survival Kit in the Skip Plan tab lists the calculation-based questions that repeat across years. Reading theory is not enough — these need to be solved by hand at least twice before the exam.
+  </p>
+</div>
+Do not change any styling, animations, layout, or any other section. Only update the three things listed above.

@@ -350,10 +350,14 @@ const Docs = () => {
 
             <div>
               {[
-                { dot:"#f59e0b", title:"HIGHEST Priority Questions", desc:"Questions that appeared 3 or more times across different years. These are your absolute must-prepares. Don't go into the exam without knowing these." },
-                { dot:"#3b6fd4", title:"HIGH Priority Questions",    desc:"Questions that appeared exactly twice. Strong pattern, high chance of appearing again. Prepare these after your HIGHEST items." },
-                { dot:"rgba(255,255,255,0.22)", title:"LOW Priority Questions", desc:"Questions that appeared once but are direct topics from your syllabus. Worth knowing but not your primary focus." },
-                { dot:"#f59e0b", title:"Must Prepare List",          desc:"A distilled list of only the recurring questions across all units. This is your revision cheat-sheet, the shortest path to exam readiness." },
+                { dot:"#f59e0b", title:"Priority 1 — Must Prepare", desc:"Questions at the top of the frequency range for your dataset. These are the most repeated topics across years. Non-negotiable preparation." },
+                { dot:"#3b6fd4", title:"Priority 2 — High Value", desc:"Questions in the middle of the frequency range. Strong pattern, solid chance of appearing. Prepare these after Priority 1." },
+                { dot:"rgba(255,255,255,0.22)", title:"Priority 3 — Worth Knowing", desc:"Questions that appeared least frequently but are directly from your syllabus. Cover these if time permits." },
+                { dot:"#22c55e", title:"Difficulty — Easy / Medium / Hard", desc:"Each question is tagged by effort required. Easy means definition or explanation. Medium means algorithm steps or diagrams. Hard means numerical calculation or multi-step proof." },
+                { dot:"#3b6fd4", title:"ROI Badge", desc:"Return on investment per question — Very High means high frequency and low effort. Use this to prioritize when time is short." },
+                { dot:"#f59e0b", title:"Must Prepare Tab", desc:"A distilled list of Priority 1 and Priority 2 questions across all units. Your shortest path to exam readiness." },
+                { dot:"#3b6fd4", title:"Skip Plan Tab", desc:"Recurra recommends which unit you can most safely skip based on frequency and difficulty data, which units to never skip, and why." },
+                { dot:"#22c55e", title:"Numerical Survival Kit", desc:"A targeted list of calculation-based questions that repeat across papers. These are the numericals you must practice, not just read." },
               ].map((row, i) => (
                 <div key={i} data-reveal style={rv(0.08 + i * 0.07)} className="docs-result-row group">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" style={{ background: row.dot }} />
@@ -375,7 +379,7 @@ const Docs = () => {
                 { title:"Add More Years",          desc:"Three or more years of papers dramatically improves pattern accuracy. Two years is the minimum; five is ideal." },
                 { title:"Structure Your Syllabus", desc:"Label units clearly with headings like 'Unit 1:' so Recurra can map questions accurately." },
                 { title:"Paste Raw Text",          desc:"Don't clean up the papers, paste them as-is, including question numbers, marks, and instructions. Recurra filters what it needs." },
-                { title:"Start With Must Prepare", desc:"After analysis, go directly to the Must Prepare tab first. These are your highest ROI questions." },
+                { title:"Start With Must Prepare + Skip Plan", desc:"After analysis, go to Must Prepare first for highest ROI questions, then check the Skip Plan tab to make a smart decision about which unit to drop if you're short on time." },
               ].map((tip, i) => (
                 <div key={i} data-reveal style={rv(0.08 + i * 0.07)} className="docs-card docs-card-hover">
                   <span style={{ fontFamily:"Syne,sans-serif", fontSize:"0.65rem", color:"rgba(255,255,255,0.15)", fontWeight:700, letterSpacing:"0.1em" }}>
@@ -386,12 +390,21 @@ const Docs = () => {
                 </div>
               ))}
 
-              {/* Full-width tip */}
+              {/* Full-width tip 05 */}
               <div data-reveal style={rv(0.4)} className="docs-card docs-card-hover sm:col-span-2">
                 <span style={{ fontFamily:"Syne,sans-serif", fontSize:"0.65rem", color:"rgba(255,255,255,0.15)", fontWeight:700, letterSpacing:"0.1em" }}>05</span>
                 <h4 style={{ fontFamily:"Syne,sans-serif", fontWeight:600, fontSize:"0.98rem", color:"rgba(255,255,255,0.88)", marginTop:10, marginBottom:6 }}>Re-analyze With More Data</h4>
                 <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"0.875rem", lineHeight:1.72 }}>
                   Got more papers? Re-analyze. Each new paper sharpens the predictions. Recurra gets better the more you give it.
+                </p>
+              </div>
+
+              {/* Full-width tip 06 */}
+              <div data-reveal style={rv(0.48)} className="docs-card docs-card-hover sm:col-span-2">
+                <span style={{ fontFamily:"Syne,sans-serif", fontSize:"0.65rem", color:"rgba(255,255,255,0.15)", fontWeight:700, letterSpacing:"0.1em" }}>06</span>
+                <h4 style={{ fontFamily:"Syne,sans-serif", fontWeight:600, fontSize:"0.98rem", color:"rgba(255,255,255,0.88)", marginTop:10, marginBottom:6 }}>Practice the Numerical Kit</h4>
+                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"0.875rem", lineHeight:1.72 }}>
+                  For technical subjects, the Numerical Survival Kit in the Skip Plan tab lists the calculation-based questions that repeat across years. Reading theory is not enough — these need to be solved by hand at least twice before the exam.
                 </p>
               </div>
             </div>
