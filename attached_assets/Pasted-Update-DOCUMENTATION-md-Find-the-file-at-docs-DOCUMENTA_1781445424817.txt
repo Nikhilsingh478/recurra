@@ -1,0 +1,23 @@
+Update DOCUMENTATION.md:
+Find the file at docs/DOCUMENTATION.md and update the following sections. Do not rewrite the entire file — only update what is listed:
+1. Section 4.1 — How the prompt works:
+Add these subsections after the existing ROI classification description:
+**Trending Detection**
+After assigning priorities, Recurra scans the 2 most recent papers in the dataset. Any topic appearing in both recent papers is marked as `trending: true` regardless of its overall frequency. This catches emerging patterns — a topic that wasn't historically frequent but is clearly gaining examiner attention. Trending questions are visually flagged in results with a 🔺 indicator.
+
+**Low Priority Labeling**
+Questions at the bottom of the frequency range (Priority 3) are automatically flagged with `lowPriority: true`. The frontend visually de-emphasizes these cards with reduced opacity and a "Lower Priority" label, helping students make fast decisions about what to skip when time is limited.
+2. Section 4.4 — JSON output schema:
+Add these rows to the question schema table:
+FieldTypeDescriptionExampletrendingbooleanTrue if topic appeared in both of the 2 most recent paperstruelowPrioritybooleanTrue if question is Priority 3 (bottom of frequency range)false
+Also update the totalYearsAnalyzed row — change the field name to totalPapersAnalyzed and update description to: "Number of distinct question papers found in input. Regular and Supplementary from same year counted separately."
+3. Section 7.1 — Tab structure:
+Update the Skip Plan tab description from whatever it currently says to:
+**Skip Plan tab:** Renders the `skipStrategy` object — recommended skip unit with rationale, alternative skip unit, must-not-skip units highlighted in warning color, and the Numerical Survival Kit listing calculation-based questions that repeat across 2+ papers. If `skipStrategy` is missing from the response, this tab shows nothing rather than a fallback error message.
+4. Section 14 — Known Limitations:
+Add this as item 7:
+7. **Trending detection requires 2+ papers** — The trending flag requires at least 2 papers to compare recency. With only 1 paper, no questions will be marked trending. This is expected behavior.
+5. Section 15 — Future Improvements:
+Add this as item 8:
+8. Per-subject prompt tuning — Engineering subjects with heavy numericals (ML, DBMS, CN) would benefit from subject-specific prompt variants that weight numerical question detection more heavily than theory detection.
+Do not change any other section, formatting, or content in the file.

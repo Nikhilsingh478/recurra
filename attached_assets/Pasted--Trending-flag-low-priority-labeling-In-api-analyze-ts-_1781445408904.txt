@@ -1,0 +1,39 @@
+ Trending flag + low priority labeling:
+In api/analyze.ts, inside the ANALYSIS_PROMPT variable, add these two sections after the PRIORITY SYSTEM section and before the MATHEMATICAL CONTENT FORMATTING section:
+TRENDING TOPICS:
+- After assigning priorities, scan the 2 most recent years/papers in the dataset
+- If a topic appears in both of the 2 most recent papers, mark it as trending
+- Add a "trending": true field to that question object, false otherwise
+- This is independent of frequency — a topic can be Priority 3 but still trending if it appeared in the last 2 papers
+
+LOW PRIORITY LABELING:
+- Any question with Priority 3 (bottom of frequency range) must have a "lowPriority": true field
+- In the question text for Priority 3 questions, do not change the question itself
+- The lowPriority flag tells the frontend to visually de-emphasize these questions
+- Students should know these are worth knowing but not primary focus
+Also update the JSON structure for each question inside probableQuestions from:
+json{
+  "question": "concise question text",
+  "frequency": <number>,
+  "priority": 1 | 2 | 3,
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "roi": "Very High" | "High" | "Medium" | "Low"
+}
+To:
+json{
+  "question": "concise question text",
+  "frequency": <number>,
+  "priority": 1 | 2 | 3,
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "roi": "Very High" | "High" | "Medium" | "Low",
+  "trending": true | false,
+  "lowPriority": true | false
+}
+Do the same update for questions inside highFrequencyQuestions array — add trending and lowPriority fields there too.
+Then in src/pages/Results.tsx, update question card rendering:
+
+If question.trending === true, show a small 🔺 badge or tag next to the question saying "Trending" in amber color
+If question.lowPriority === true, render the question card with reduced opacity (around 0.5) and add a small muted label "Lower Priority" so students can visually deprioritize it
+Apply both these changes in the Unit-wise tab, Must Prepare tab, and PDF export
+
+Do not change anything else.
