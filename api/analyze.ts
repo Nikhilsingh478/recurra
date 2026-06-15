@@ -34,7 +34,7 @@ async function callGemini(prompt: string): Promise<any> {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 20000 },
+          generationConfig: { temperature: 0, maxOutputTokens: 8000 },
         }),
       }
     );
