@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 interface StackCardProps {
   children: React.ReactNode;
@@ -10,28 +10,56 @@ interface StackCardProps {
 /* ── Single sticky card ── */
 const StackCard = ({ children, index, total, className = '' }: StackCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    // The top card never scales, so it needs no scroll work at all
+    if (!el || index >= total - 1) return;
 
-    const onScroll = () => {
+    let lastScale = -1;
+    const update = () => {
       const rect = el.getBoundingClientRect();
       const windowH = window.innerHeight;
       // progress 0→1 as card scrolls from bottom of viewport to top
-      const p = Math.max(0, Math.min(1, (windowH - rect.top) / (windowH + rect.height)));
-      setProgress(p);
+      const progress = Math.max(0, Math.min(1, (windowH - rect.top) / (windowH + rect.height)));
+      // Each card behind the top one scales down slightly
+      const scaleDown = 1 - (total - 1 - index) * 0.04 * (1 - progress);
+      const scale = Math.max(0.82, Math.min(1, scaleDown));
+      if (Math.abs(scale - lastScale) < 0.0005) return;
+      lastScale = scale;
+      el.style.transform = `scale(${scale})`;
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    let rafId = 0;
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        update();
+      });
+    };
 
-  // Each card behind the top one scales down slightly
-  const scaleDown = index < total - 1 ? 1 - (total - 1 - index) * 0.04 * (1 - progress) : 1;
-  const clampedScale = Math.max(0.82, Math.min(1, scaleDown));
+    // Only listen to scroll while the card is on screen
+    let listening = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !listening) {
+        listening = true;
+        window.addEventListener('scroll', onScroll, { passive: true });
+        update();
+      } else if (!entry.isIntersecting && listening) {
+        listening = false;
+        window.removeEventListener('scroll', onScroll);
+      }
+    });
+    observer.observe(el);
+    update();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [index, total]);
 
   return (
     <div
@@ -42,7 +70,6 @@ const StackCard = ({ children, index, total, className = '' }: StackCardProps) =
         top: `${60 + index * 16}px`,
         zIndex: index + 1,
         transformOrigin: 'top center',
-        transform: `scale(${clampedScale})`,
         transition: 'transform 0.1s linear',
         willChange: 'transform',
         marginBottom: index < total - 1 ? '20px' : 0,

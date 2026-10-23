@@ -35,12 +35,12 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap" />
   </noscript>
 
-  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
-  <link rel="preload" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" as="style"
-    onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" />
-  </noscript>
+  <!-- General Sans is self-hosted (see src/index.css); preload the weights used above the fold -->
+  <link rel="preload" href="/fonts/general-sans-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/general-sans-400.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- Hero poster shown until the background video loads -->
+  <link rel="preload" href="/hero-frame.webp" as="image" type="image/webp" fetchpriority="high" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="Recurra — AI Exam Pattern Analysis" />
@@ -62,12 +62,28 @@
   <meta name="twitter:image" content="https://recurraio.vercel.app/og_image.webp" />
 
   <!-- Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SGY0DD14NX"></script>
+  <!-- Analytics: events queue in dataLayer immediately; gtag.js itself is loaded
+       on first interaction (or shortly after load) to keep it off the critical path -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-SGY0DD14NX');
+    (function () {
+      var loaded = false;
+      var events = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+      function load() {
+        if (loaded) return;
+        loaded = true;
+        events.forEach(function (e) { removeEventListener(e, load); });
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-SGY0DD14NX';
+        document.head.appendChild(s);
+      }
+      events.forEach(function (e) { addEventListener(e, load, { once: true, passive: true }); });
+      addEventListener('load', function () { setTimeout(load, 7000); });
+    })();
   </script>
 
   <!-- Structured Data -->
