@@ -10,11 +10,17 @@ Recurra is an AI-powered exam preparation tool that cross-references a universit
 
 ## 2. Architecture
 
-- **Frontend**: React 18 + TypeScript, Vite, Tailwind CSS, shadcn/ui
-- **Backend**: Node.js server (`server/index.js`) with Vite in middleware mode for development
-- **AI Engine**: Google Gemini 2.5 Pro via REST API (`server/analyze.js`)
-- **Routing**: React Router v6
+- **Frontend**: React 18 + TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix Toast)
+- **Routing**: React Router v6, every page lazy-loaded
 - **Math rendering**: KaTeX via `react-katex`
+- **Backend**: two implementations of the same `POST /api/analyze` contract:
+
+| Backend | File | Gemini model | Used by |
+|---|---|---|---|
+| Vercel serverless function | `api/analyze.ts` | `gemini-2.5-flash-lite` | Production ([recurraio.vercel.app](https://recurraio.vercel.app)); 60s max duration set in `vercel.json` |
+| Node HTTP server | `server/index.js` + `server/analyze.js` | `gemini-2.5-pro` | Local development, Replit, and Render (`render.yaml`) |
+
+Both call the Gemini REST API with `temperature: 0`. When changing the prompt or validation, update **both** `api/analyze.ts` and `server/analyze.js` to keep them in sync.
 
 ---
 
@@ -24,7 +30,9 @@ Recurra is an AI-powered exam preparation tool that cross-references a universit
 ```
 node server/index.js
 ```
-The server binds to `0.0.0.0:5000` and proxies Vite in middleware mode so frontend and API share one origin.
+The server binds to `0.0.0.0:${PORT:-5000}`. In development it runs Vite in middleware mode so the frontend and API share one origin. With `NODE_ENV=production` it serves the built `dist/` folder instead.
+
+`npm run dev` starts the Vite dev server alone (also on port 5000), but `/api/analyze` is not available there.
 
 ### Environment Variables
 | Variable | Required | Description |
@@ -33,6 +41,22 @@ The server binds to `0.0.0.0:5000` and proxies Vite in middleware mode so fronte
 | `GEMINI_API_KEY_1` | No | Fallback key (rotated on 429/403) |
 | `GEMINI_API_KEY_2` | No | Fallback key |
 | `GEMINI_API_KEY_3` | No | Fallback key |
+| `VITE_EMAILJS_TEMPLATE_ID` | No | EmailJS template for the feedback modal |
+| `VITE_EMAILJS_PUBLIC_KEY` | No | EmailJS public key. If either EmailJS var is missing, feedback submission is skipped silently. |
+| `PORT` | No | Node server port (default `5000`) |
+| `NODE_ENV` | No | `production` makes the Node server serve `dist/` |
+
+### Scripts
+| Command | Description |
+|---|---|
+| `npm run build` | Production build to `dist/` (also generates `sitemap.xml`) |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | ESLint |
+| `npm test` / `npm run test:watch` | Vitest (jsdom), tests live in `src/test/` |
+
+### Deployment
+- **Vercel**: frontend + `api/analyze.ts`. `vercel.json` defines SPA rewrites, the function timeout, and cache headers (`/assets/*`, `/fonts/*`, and `*.webm` are cached for 1 year as immutable).
+- **Render**: `render.yaml` builds with `npm install --include=dev && npm run build` and starts `node server/index.js` with `NODE_ENV=production`.
 
 ---
 
@@ -40,7 +64,7 @@ The server binds to `0.0.0.0:5000` and proxies Vite in middleware mode so fronte
 
 ### 4.1 — How the prompt works
 
-The `ANALYSIS_PROMPT` in `server/analyze.js` instructs Gemini with a structured set of rules applied in order:
+The analysis prompt (in both `api/analyze.ts` and `server/analyze.js`) instructs Gemini with a structured set of rules applied in order:
 
 **Question Inclusion**
 Only syllabus-mapped questions are included. Out-of-syllabus questions are excluded regardless of how often they appeared.
@@ -139,7 +163,7 @@ In-memory IP-based rate limiting: 10 analyses per IP per day, resetting at midni
 
 1. User pastes syllabus and question papers on `/analyze`
 2. Frontend POST to `/api/analyze`
-3. `server/analyze.js` validates inputs, checks rate limit, builds prompt, calls Gemini
+3. The backend (`api/analyze.ts` on Vercel, `server/analyze.js` on the Node server) validates inputs, checks rate limit, builds prompt, calls Gemini
 4. Gemini returns JSON; server strips markdown wrappers and parses
 5. Result stored in `localStorage` as `recurra_results`
 6. Browser redirects to `/results` which reads from localStorage
@@ -186,7 +210,8 @@ All mathematical content is rendered via KaTeX using the `MathRenderer` componen
 
 **Error codes:**
 - `400` — Invalid syllabus or papers input
-- `413` — Request body too large (>1MB)
+- `405` — Method other than `POST` (`OPTIONS` preflight is allowed)
+- `413` — Request body too large (>1MB; Node server only, Vercel enforces its own platform limit)
 - `429` — Daily rate limit exceeded
 - `500` — Analysis failed or service not configured
 - `502` — Gemini service error
@@ -196,7 +221,9 @@ All mathematical content is rendered via KaTeX using the `MathRenderer` componen
 
 ## 10. Analytics
 
-A lightweight analytics module (`src/lib/analytics.ts`) tracks events: tab switches, PDF exports, result copies, analyses run. No PII is collected.
+A lightweight analytics module (`src/lib/analytics.ts`) wraps GA4 `gtag` and tracks: analysis started/completed/failed, PDF exported, results copied, tab switched, and feedback submitted. No PII is collected.
+
+`gtag.js` itself is **not** loaded during the initial page load. `index.html` defines the `dataLayer`/`gtag` stub immediately (so events are queued from the start) and injects the GA script on the first `pointerdown`, `keydown`, `touchstart`, or `scroll`, or 7 seconds after the `load` event, whichever comes first.
 
 ---
 
@@ -213,6 +240,20 @@ Each page uses `react-helmet-async` for per-page title, meta description, Open G
 - Dark theme only (`#050810` background)
 - Glassmorphism effects via `backdrop-filter`
 - Hardware-accelerated animations using `will-change` and `transform`
+- Fonts: General Sans is self-hosted (`public/fonts/`, declared in `src/index.css`); Inter and Syne load asynchronously from Google Fonts
+
+---
+
+## 12a. Landing Page Performance
+
+The landing page targets a Lighthouse mobile performance score of 90+. Keep these rules in place when changing it:
+
+1. **The hero `<h1>` is the LCP element.** It must be visible on first paint: animate `transform` only (`.enter-rise`), never `opacity`, and no delay.
+2. **No animation libraries on the landing route.** Entrances use the CSS keyframe classes in `src/index.css` (`enter-fade-up`, `enter-rise`, `enter-fade`, `exit-fade`), tuned via `--enter-y`, `--enter-scale`, `animationDelay`, and `animationDuration`. All respect `prefers-reduced-motion`.
+3. **Scroll effects** (`ScrollReveal`, `ScrollStack`) use one `requestAnimationFrame`-throttled scroll listener per component, attached only while the element is on screen (`IntersectionObserver`), and write styles directly to the DOM instead of setting React state.
+4. **Below-the-fold content** (`BelowFold` in `Index.tsx`) mounts inside `startTransition` after the first paint so React renders it in interruptible slices.
+5. **Hero video** (`src/assets/hero.webm`, ~500 KB) loads only after `window.load` + 1.5s + idle. It is skipped entirely on Save-Data, 2G connections, or reduced motion. `public/hero-frame.webp` is the preloaded poster shown until then.
+6. **Entry bundle stays minimal.** Pages and the Radix `Toaster` are lazy-loaded in `App.tsx`. Do not add global providers or libraries to `App.tsx`/`main.tsx` unless every page needs them.
 
 ---
 
